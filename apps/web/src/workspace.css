@@ -1,0 +1,70 @@
+/* Hallmark · pre-emit critique: P4 H4 E4 S4 R5 V4
+ * genre: editorial workbench · theme: existing FamilyDent handoff
+ * Scope: cabinet density and action contrast; existing tokens and routes preserved.
+ */
+.clinical-workspace {
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --workspace-max: 1280px;
+}
+html, body { overflow-x: clip; }
+.clinical-workspace .content { width: 100%; max-width: var(--workspace-max); margin-inline: auto; padding: var(--space-lg); }
+.clinical-workspace .workspace, .clinical-workspace .content,
+.clinical-workspace .panel, .clinical-workspace .field { min-width: 0; }
+.clinical-workspace .topbar { gap: var(--space-md); padding-inline: var(--space-lg); }
+.clinical-workspace .topbar > .row { min-width: 0; }
+.clinical-workspace .breadcrumb { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.clinical-workspace .page-head { margin-bottom: var(--space-lg); }
+.clinical-workspace .page-head h1 { font-size: clamp(26px, 2.2vw, 34px); overflow-wrap: anywhere; min-width: 0; }
+.clinical-workspace .page-head p { margin-top: var(--space-xs); }
+.clinical-workspace .demo-notice { margin-bottom: var(--space-md); padding: var(--space-xs) var(--space-sm); }
+.workspace-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-md); align-items: start; }
+.workspace-grid > * { min-width: 0; }
+.clinical-workspace .panel-pad { padding: var(--space-lg); }
+.clinical-workspace .task-panel h2, .clinical-workspace .panel-pad > h2 { font-family: var(--font-body); font-size: 18px; line-height: 1.4; overflow-wrap: anywhere; min-width: 0; }
+.clinical-workspace .task-form { gap: var(--space-sm); margin-top: var(--space-md); }
+.clinical-workspace .task-form > p { font-size: 12px; }
+.clinical-workspace .task-form > .btn { justify-self: start; width: auto; }
+.clinical-workspace .task-form > .task-submit { margin-top: var(--space-xs); }
+.clinical-workspace .field { gap: 6px; }
+.clinical-workspace .field input, .clinical-workspace .field select { min-width: 0; min-height: 44px; padding: 10px 12px; }
+.form-feedback:empty { display: none; }
+.clinical-workspace .form-feedback { color: var(--fg); }
+.clinical-workspace .panel-head { padding: var(--space-md) var(--space-lg); gap: var(--space-sm); }
+.clinical-workspace .account-row { padding-block: var(--space-sm); gap: var(--space-sm); font-size: 12px; }
+.clinical-workspace .account-row > span { min-width: 0; overflow-wrap: anywhere; }
+.clinical-workspace .sidebar { position: sticky; top: 0; height: 100dvh; min-height: 0; overflow-y: auto; }
+.clinical-workspace .help-box { color: var(--surface); }
+.clinical-workspace .logout-button { flex: none; background: var(--accent); color: var(--fg); border-color: var(--accent); font-size: 12px; font-weight: 500; min-height: 44px; }
+.clinical-workspace .logout-button:hover:not(:disabled) { background: var(--surface); color: var(--fg); border-color: var(--fg); }
+.clinical-workspace .logout-button:focus-visible { outline: 2px solid var(--trust); outline-offset: 3px; }
+.clinical-workspace .logout-button:active:not(:disabled) { transform: translateY(1px); }
+.clinical-workspace .logout-button:disabled { opacity: .7; cursor: wait; }
+@media (min-width: 64rem) {
+  .workspace-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .admin-grid { grid-template-columns: minmax(0, .75fr) minmax(0, 1.25fr); }
+  .workspace-wide, .staff-grid > .account-creation { grid-column: 1 / -1; }
+  .workspace-grid > .account-creation .task-form { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: var(--space-lg); }
+  .workspace-grid > .account-creation .form-intro,
+  .workspace-grid > .account-creation .task-submit,
+  .workspace-grid > .account-creation .form-feedback { grid-column: 1 / -1; }
+}
+@media (max-width: 900px) {
+  .clinical-workspace .sidebar.mobile-open { position: fixed; top: 80px; height: calc(100dvh - 80px); }
+}
+@media (max-width: 600px) {
+  .clinical-workspace .content { padding: var(--space-md); }
+  .clinical-workspace .panel-pad { padding: var(--space-md); }
+  .clinical-workspace .topbar { padding-inline: var(--space-md); gap: var(--space-xs); }
+  .clinical-workspace .topbar > .row { flex: 1; gap: var(--space-xs); }
+  .clinical-workspace .breadcrumb span { display: none; }
+  .clinical-workspace .logout-button { padding-inline: var(--space-sm); }
+  .clinical-workspace .page-head { gap: var(--space-sm); }
+  .clinical-workspace .panel-head { padding: var(--space-md); flex-wrap: wrap; }
+  .clinical-workspace .table-bottom { gap: var(--space-xs); flex-wrap: wrap; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .clinical-workspace .btn { transition: none; }
+}

@@ -1,0 +1,24 @@
+{
+  "date": "2026-11-13",
+  "scope": "Workspace.tsx cabinet layout corrections",
+  "source": "Медицинский-портал-FamilyDent/DESIGN.md",
+  "fonts": [
+    "Roboto Serif",
+    "Golos Text"
+  ],
+  "palette": "existing apps/web/src/design.css :root",
+  "spacing": "existing 8px rhythm, compact 12/16/24px steps",
+  "framework": "React + TypeScript + Vite",
+  "motion": "existing restrained transitions, reduced-motion",
+  "preserve": [
+    "brand",
+    "tokens",
+    "auth/data fetching",
+    "source export"
+  ],
+  "fix": [
+    "one-column stretched forms",
+    "full-width submit buttons",
+    "inherited muted logout color"
+  ]
+}

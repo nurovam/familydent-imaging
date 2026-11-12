@@ -1,0 +1,11 @@
+# Cabinet layout correction — Hallmark
+
+2026-11-13. Skill read from local OpenDesign plugins/community/hallmark/SKILL.md, with redesign, layout-and-space, interaction-and-states, responsive, slop-test and contract references. Applied narrowly to the common Workspace component, not a new app-wide theme or route rebuild. Source handoff and design.css unchanged.
+
+Findings: the full-width one-column stack made every form/button disproportionately wide; sidebar stretched with page height, placing account controls below long content; logout inherited muted sidebar text on a light button. Existing Roboto Serif/Golos Text, paper/white/graphite/gold palette and restrained motion preserved.
+
+Corrections: bounded work area, adjacent registration forms on desktop, two-column account fields, compact heading/spacing rhythm, content-sized submit actions; study table full width. Single-column mobile fallback. Sticky viewport-height desktop sidebar. Logout moved to the shared topbar, explicit gold/graphite color pair, icon, hover/instant focus/pressed states, temporary disabled/loading only during request; error returns usable action, success ends session. No auth/API rules changed. No files deleted.
+
+QA: browser workflow verifies registration, assignment, doctor scope and revoke. All three roles checked at320/375/414/768/1024/1440/1920: no horizontal overflow, visible enabled logout44px+, measured WCAG text contrast>=4.5. Explicit desktop regression checks form alignment and submit width. Logout network failure leaves retry available; keyboard activation returns login and API/me401. Synthetic-only screenshots in services/api/test-results, never enrollment QR or credentials. New CSS uses existing color/font tokens; no new palette/theme, illustrations, dependencies or animation.
+
+Hallmark self-review (subjective1–5): philosophy4, hierarchy4, execution4, specificity4, restraint5, variety4. Universal checks used: contrast, responsive affordances, keyboard, token discipline, no fabricated metrics/chrome. Marketing hero/diversification gates are not applicable to this scoped correction of an existing medical workbench. Final aesthetic acceptance remains with the owner. PR merge requires separate instruction.

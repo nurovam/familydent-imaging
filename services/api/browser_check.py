@@ -144,6 +144,15 @@ try:
         patient_form = staff.locator("section").filter(
             has=staff.get_by_role("heading", name="Зарегистрировать пациента", exact=True)
         )
+        study_panel = staff.locator("section").filter(
+            has=staff.get_by_role("heading", name="Зарегистрировать исследование", exact=True)
+        )
+        patient_box, study_box = patient_form.bounding_box(), study_panel.bounding_box()
+        assert patient_box and study_box
+        assert abs(patient_box["y"] - study_box["y"]) < 8, "Registration forms should share a desktop row"
+        assert (
+            patient_form.get_by_role("button", name="Сохранить", exact=True).bounding_box()["width"] < 260
+        ), "Submit button should fit its label"
         patient_form.get_by_label("Внутренний ID пациента").fill("SYN-BROWSER-001")
         patient_form.get_by_label("ФИО пациента").fill("SYNTHETIC BROWSER PATIENT")
         patient_form.get_by_role("button", name="Сохранить", exact=True).click()
@@ -197,6 +206,51 @@ try:
         admin.screenshot(path="test-results/admin.png")
         admin.set_viewport_size({"width": 390, "height": 844})
         admin.screenshot(path="test-results/mobile.png", full_page=True)
+        for role, page in (("staff", staff), ("doctor", doctor), ("admin", admin)):
+            for width in (320, 375, 414, 768, 1024, 1440, 1920):
+                page.set_viewport_size({"width": width, "height": 900})
+                page.evaluate("window.scrollTo(0, 0)")
+                button = page.get_by_role("button", name="Выйти", exact=True)
+                expect(button).to_be_visible()
+                expect(button).to_be_enabled()
+                box = button.bounding_box()
+                assert box and box["y"] < 90 and box["height"] >= 44, (
+                    "Logout must be visible and touch-friendly"
+                )
+                assert page.evaluate("document.documentElement.scrollWidth <= innerWidth"), (
+                    f"Overflow: {role}/{width}"
+                )
+                # Convert resolved OKLCH colors through canvas, then measure WCAG sRGB contrast.
+                ratio = button.evaluate("""el => {
+                    const style = getComputedStyle(el), c = document.createElement('canvas');
+                    c.width = c.height = 1; const ctx = c.getContext('2d');
+                    const lum = color => { ctx.fillStyle = color; ctx.fillRect(0,0,1,1);
+                        const rgb = [...ctx.getImageData(0,0,1,1).data].slice(0,3).map(v => {
+                            const n=v/255; return n<=.04045 ? n/12.92 : ((n+.055)/1.055)**2.4;
+                        }); return .2126*rgb[0]+.7152*rgb[1]+.0722*rgb[2]; };
+                    const a=lum(style.color), b=lum(style.backgroundColor);
+                    return (Math.max(a,b)+.05)/(Math.min(a,b)+.05);
+                }""")
+                assert ratio >= 4.5, f"Logout contrast: {ratio}"
+                page.screenshot(path=f"test-results/{role}-{width}.png", full_page=True)
+        # A failed logout keeps the button usable; successful keyboard activation revokes the session.
+        other.set_viewport_size({"width": 375, "height": 844})
+        other.route(
+            "**/api/auth/logout", lambda route: route.fulfill(status=503, json={"code": "UNAVAILABLE"})
+        )
+        exit_button = other.get_by_role("button", name="Выйти", exact=True)
+        exit_button.click()
+        expect(other.get_by_role("alert")).to_be_visible()
+        expect(exit_button).to_be_enabled()
+        other.unroute("**/api/auth/logout")
+        exit_button.focus()
+        exit_button.press("Tab")
+        other.keyboard.press("Shift+Tab")
+        expect(exit_button).to_be_focused()
+        assert exit_button.evaluate("el => getComputedStyle(el).outlineStyle") != "none"
+        exit_button.press("Enter")
+        expect(other.get_by_role("heading", name="Вход в портал", exact=True)).to_be_visible()
+        assert other.context.request.get("http://127.0.0.1:5174/api/auth/me").status == 401
         assert not errors, errors
         assert not external, external
         browser.close()
