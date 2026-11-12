@@ -1,6 +1,22 @@
 [
   {
     "date": "2026-11-13",
+    "scope": "doctor/staff reference context rail",
+    "macrostructure": "register plus right-hand latest-study and activity rail",
+    "theme": "existing FamilyDent OpenDesign handoff",
+    "enrichment": "original deterministic jaw illustration, explicitly schematic",
+    "brief": "Owner image clarified missing dark latest-study card and white event timeline; restore actual source blocks with real scoped metadata/events."
+  },
+  {
+    "date": "2026-11-13",
+    "scope": "existing authenticated cabinets and import components",
+    "macrostructure": "compact register-first workbench with on-demand task dialogs",
+    "theme": "existing FamilyDent OpenDesign handoff",
+    "enrichment": "none",
+    "brief": "Restore source panel/pill/field geometry, gold navigation, avatars, icons and file-picker treatment; preserve authorization and compact layout."
+  },
+  {
+    "date": "2026-11-13",
     "scope": "shared cabinet view",
     "macrostructure": "register-first workbench with on-demand task dialogs",
     "theme": "existing FamilyDent handoff",

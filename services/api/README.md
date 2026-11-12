@@ -1,6 +1,6 @@
 # Backend: accounts, MFA and assignments
 
-Стадия локального врачебного v1. FastAPI, SQLAlchemy/Alembic, PostgreSQL. Реальные медицинские данные и production подключения запрещены. DICOM gateway из experiments/ не перенесён в этот сервис: текущие studies — метаданные в REGISTERED, не готовые к просмотру снимки.
+Стадия локального врачебного v1. FastAPI, SQLAlchemy/Alembic, PostgreSQL. Реальные медицинские данные и production подключения запрещены. Основной сервис теперь содержит локальный synthetic imaging: импорт в карантин, worker, подтверждение сотрудником, защищённый DICOMweb/OHIF и скачивание оригиналов. Ограничения и команды — [PROTECTED_IMAGING.md](../../familydent_imaging_codex/docs/PROTECTED_IMAGING.md).
 
 ## Запуск из корня репозитория
 
@@ -69,7 +69,7 @@ Dependencies pinned в uv.lock и requirements*.txt с hashes. Regenerate: `uv e
 
 ## Открытые ограничения
 
-Нет recovery/password change/MFA reset/rotation/операционного cleanup auth tables; до пилота нужен проверенный регламент. Аккаунт создаётся уполномоченным сотрудником после проверки врача; процедура пока организационная. Клиники — справочник одного оператора FamilyDent, не независимые tenants. UI staff/admin показывает первые страницы справочников; полноценная навигация больших staff списков и визуальная приёмка новых security forms ещё впереди. При первичной настройке QR строится локально в браузере из provisioning URI; ручной ключ доступен как fallback. При обычном входе QR и ключ не показываются. Нет DICOM import/ZIP/production streaming, READY transition или policy actions для выдачи изображений. При переносе imaging использовать отдельную action-aware READY policy, а не только текущую metadata policy. Этот этап не делает портал production-ready.
+Нет recovery/password change/MFA reset/rotation/операционного cleanup auth tables; до пилота нужен проверенный регламент. Аккаунт создаётся уполномоченным сотрудником после проверки врача; процедура пока организационная. Клиники — справочник одного оператора FamilyDent, не независимые tenants. UI staff/admin показывает первые страницы справочников; полноценная навигация больших staff списков и визуальная приёмка новых security forms ещё впереди. При первичной настройке QR строится локально в браузере из provisioning URI; ручной ключ доступен как fallback. При обычном входе QR и ключ не показываются. Imaging работает только в local development с отдельной READY/PUBLISHED policy и свежей проверкой assignment/session. Production streaming/deployment не разрешены. Этот этап не делает портал production-ready.
 
 ## Данные для ручной проверки
 
@@ -81,7 +81,7 @@ uv run python -m app.manage seed-studies
 
 Команда разрешена только для loopback familydent_dev и существующих активных SYNTHETIC аккаунтов. Добавляет 8 пациентов SYN-DEMO-001…008 и 12 исследований с явными тестовыми подписями. Набор: doctor@example.test видит5 исследований; other@example.test —3; staff видит все12, в том числе2 неназначенных,1 заблокированное и1 с отозванным назначением. У одного пациента есть исследования разных врачей — история по пациенту не расширяет права.
 
-Повторный запуск не создаёт дубли и не восстанавливает отозванные доступы, не меняет existing patients, статусы studies, пароли, TOTP или сессии. Коллизия внутреннего ID прекращает транзакцию без перезаписи. Это metadata REGISTERED/BLOCKED, **не DICOM-файлы**: реальный просмотр по-прежнему в отдельном synthetic imaging spike. Никаких migrations/удалений/сбросов для заполнения не требуется.
+Повторный запуск не создаёт дубли и не восстанавливает отозванные доступы, не меняет existing patients, статусы studies, пароли, TOTP или сессии. Коллизия внутреннего ID прекращает транзакцию без перезаписи. Это metadata REGISTERED/BLOCKED, **не DICOM-файлы**. Для этих записей можно сгенерировать геометрический ZIP и загрузить через новый диалог импорта; готовые снимки не создаются seed-studies автоматически. Никаких migrations/удалений/сбросов для заполнения не требуется.
 
 Актуально18 PostgreSQL tests, включая idempotent seed, разные doctor scopes и сохранность MFA/session/revocations.
 

@@ -33,5 +33,33 @@ services:
       interval: 2s
       timeout: 2s
       retries: 30
+  orthanc:
+    image: orthancteam/orthanc:25.11.0@sha256:f6a9b77d0d7d743d56abdedf2ab3d08ba343c153ee0b2034c70754ee6ee06bed
+    profiles: [imaging]
+    environment:
+      DICOM_WEB_PLUGIN_ENABLED: 'true'
+    ports: ['127.0.0.1:8044:8042']
+    volumes:
+      - ./imaging/orthanc.json:/etc/orthanc/orthanc.json:ro
+      - synthetic-orthanc:/var/lib/orthanc/db
+  ohif:
+    image: ohif/app:v3.11.0@sha256:dee5c696c712082fdd4321b6f5ad94846dc97df5d970548ca0e1d5289667b047
+    profiles: [imaging]
+    ports: ['127.0.0.1:8092:80']
+    volumes:
+      - ./imaging/app-config.js:/usr/share/nginx/html/app-config.js:ro
+  viewer:
+    image: nginx:1.28-alpine@sha256:a8b39bd9cf0f83869a2162827a0caf6137ddf759d50a171451b335cecc87d236
+    profiles: [imaging]
+    # Linux-only dev adapter: the API runs on host loopback. No public listener.
+    network_mode: host
+    environment:
+      IMAGING_API_PORT: ${IMAGING_API_PORT:-8100}
+      NGINX_ENVSUBST_OUTPUT_DIR: /etc/nginx
+      NGINX_ENVSUBST_FILTER: IMAGING_API_PORT
+    volumes:
+      - ./imaging/nginx.conf.template:/etc/nginx/templates/nginx.conf.template:ro
+    depends_on: [ohif]
 volumes:
+  synthetic-orthanc:
   dev-db:

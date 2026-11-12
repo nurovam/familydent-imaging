@@ -87,6 +87,19 @@
         "title": "CodeInput",
         "type": "object"
       },
+      "ConfirmImport": {
+        "properties": {
+          "confirmed": {
+            "title": "Confirmed",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "confirmed"
+        ],
+        "title": "ConfirmImport",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -98,6 +111,33 @@
           }
         },
         "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "Overview": {
+        "properties": {
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/WorkspaceEvent"
+            },
+            "title": "Events",
+            "type": "array"
+          },
+          "latest": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StudySummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "latest",
+          "events"
+        ],
+        "title": "Overview",
         "type": "object"
       },
       "PasswordInput": {
@@ -360,6 +400,33 @@
           "type"
         ],
         "title": "ValidationError",
+        "type": "object"
+      },
+      "WorkspaceEvent": {
+        "properties": {
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "study": {
+            "$ref": "#/components/schemas/StudySummary"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "created_at",
+          "study"
+        ],
+        "title": "WorkspaceEvent",
         "type": "object"
       }
     }
@@ -843,6 +910,139 @@
         ]
       }
     },
+    "/api/doctor/studies/{study_id}/imaging": {
+      "get": {
+        "operationId": "images_api_doctor_studies__study_id__imaging_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "study_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Study Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Images",
+        "tags": [
+          "protected imaging"
+        ]
+      }
+    },
+    "/api/doctor/studies/{study_id}/instances/{instance_id}/original": {
+      "get": {
+        "operationId": "download_instance_api_doctor_studies__study_id__instances__instance_id__original_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "study_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Study Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "instance_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Instance Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Download Instance",
+        "tags": [
+          "protected imaging"
+        ]
+      }
+    },
+    "/api/doctor/studies/{study_id}/originals": {
+      "get": {
+        "operationId": "download_zip_api_doctor_studies__study_id__originals_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "study_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Study Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Download Zip",
+        "tags": [
+          "protected imaging"
+        ]
+      }
+    },
     "/api/health": {
       "get": {
         "operationId": "health_api_health_get",
@@ -857,6 +1057,46 @@
           }
         },
         "summary": "Health"
+      }
+    },
+    "/api/imaging/dicom-web/{path}": {
+      "get": {
+        "operationId": "dicomweb_api_imaging_dicom_web__path__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "path",
+            "required": true,
+            "schema": {
+              "title": "Path",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Dicomweb",
+        "tags": [
+          "protected imaging"
+        ]
       }
     },
     "/api/staff/assignments/{assignment_id}/revoke": {
@@ -1208,6 +1448,168 @@
         "summary": "Assign",
         "tags": [
           "studies"
+        ]
+      }
+    },
+    "/api/staff/studies/{study_id}/imports": {
+      "get": {
+        "operationId": "jobs_api_staff_studies__study_id__imports_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "study_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Study Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Jobs",
+        "tags": [
+          "imaging imports"
+        ]
+      },
+      "post": {
+        "operationId": "upload_api_staff_studies__study_id__imports_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "study_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Study Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Upload",
+        "tags": [
+          "imaging imports"
+        ]
+      }
+    },
+    "/api/staff/studies/{study_id}/imports/{job_id}/publish": {
+      "post": {
+        "operationId": "publish_api_staff_studies__study_id__imports__job_id__publish_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "study_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Study Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Job Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmImport"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Publish",
+        "tags": [
+          "imaging imports"
+        ]
+      }
+    },
+    "/api/workspace/overview": {
+      "get": {
+        "operationId": "overview_api_workspace_overview_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Overview"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Overview",
+        "tags": [
+          "workspace"
         ]
       }
     }

@@ -37,5 +37,7 @@ infra/local/.demo-credentials
 .mypy_cache/
 .ruff_cache/
 
+infra/local/imaging-data/
+
 # Editor swap files may contain local credentials
 *.swp

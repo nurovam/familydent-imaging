@@ -2,7 +2,7 @@
 name = "familydent-api"
 version = "0.1.0"
 requires-python = ">=3.12"
-dependencies = ["fastapi", "uvicorn", "sqlalchemy>=2,<3", "alembic", "psycopg[binary]", "pwdlib[argon2]", "pyotp", "cryptography"]
+dependencies = ["fastapi", "uvicorn", "sqlalchemy>=2,<3", "alembic", "psycopg[binary]", "pwdlib[argon2]", "pyotp", "cryptography", "pydicom>=3.0.1,<4", "httpx>=0.28,<1"]
 [dependency-groups]
 dev = [
     "pytest",

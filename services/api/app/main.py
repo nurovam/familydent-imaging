@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import create_engine, text
 from sqlalchemy.exc import IntegrityError
 
-from . import admin, auth, studies
+from . import admin, auth, imaging, imports, overview, studies
 from .config import Settings
 
 
@@ -44,7 +44,9 @@ def create_app(settings: Settings, now=None) -> FastAPI:
     @app.exception_handler(HTTPException)
     async def http_error(request: Request, error: HTTPException):
         return JSONResponse(
-            {"code": error.detail, "request_id": request.state.request_id}, status_code=error.status_code
+            {"code": error.detail, "request_id": request.state.request_id},
+            status_code=error.status_code,
+            headers=error.headers,
         )
 
     @app.exception_handler(RequestValidationError)
@@ -67,6 +69,9 @@ def create_app(settings: Settings, now=None) -> FastAPI:
     app.include_router(auth.router)
     app.include_router(studies.router)
     app.include_router(admin.router)
+    app.include_router(imports.router)
+    app.include_router(imaging.router)
+    app.include_router(overview.router)
     return app
 
 

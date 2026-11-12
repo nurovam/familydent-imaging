@@ -3,8 +3,11 @@
 import os
 import secrets
 import subprocess
+import sys
+import tempfile
 import threading
 import time
+import zipfile
 from datetime import UTC, datetime
 from io import BytesIO
 from pathlib import Path
@@ -26,6 +29,7 @@ from app.main import create_app
 from app.models import Base, Clinic, Membership, User
 from app.runtime import load_local_env
 from app.security import hash_password
+from app.synthetic_dicom import fixture
 
 ROOT = Path(__file__).resolve().parents[2]
 load_local_env()
@@ -62,12 +66,14 @@ with Session(engine) as db, db.begin():
         if role == "doctor":
             db.add(Membership(user_id=user.id, clinic_id=clinic.id))
 engine.dispose()
+imaging_directory = tempfile.TemporaryDirectory(prefix="familydent-synthetic-browser-")
 settings = Settings(
     database_url=os.environ["TEST_DATABASE_URL"],
     totp_key=os.environ["TOTP_KEY"],
     auth_key=os.environ["AUTH_KEY"],
     public_origin="http://127.0.0.1:5174",
     development=True,
+    imaging_root=imaging_directory.name,
 )
 app = create_app(settings)
 server = uvicorn.Server(
@@ -95,7 +101,15 @@ try:
         else:
             raise RuntimeError("Test frontend/backend did not become ready")
     with sync_playwright() as p:
-        options = {"args": ["--no-sandbox", "--no-proxy-server"]}
+        options = {
+            "args": [
+                "--no-sandbox",
+                "--no-proxy-server",
+                "--use-gl=angle",
+                "--use-angle=swiftshader",
+                "--enable-unsafe-swiftshader",
+            ]
+        }
         if os.getenv("CHROMIUM_PATH"):
             options["executable_path"] = os.environ["CHROMIUM_PATH"]
         browser = p.chromium.launch(**options)
@@ -109,7 +123,9 @@ try:
                 "request",
                 lambda request: (
                     external.append(request.url)
-                    if not request.url.startswith(("http://127.0.0.1:5174", "blob:", "data:"))
+                    if not request.url.startswith(
+                        ("http://127.0.0.1:5174", "http://127.0.0.1:8091", "blob:", "data:")
+                    )
                     else None
                 ),
             )
@@ -140,6 +156,7 @@ try:
             page.set_viewport_size({"width": 1440, "height": 900})
             return page
 
+        print("Browser checkpoint: MFA staff", flush=True)
         staff = login("staff")
         patient_form = staff.locator("section").filter(
             has=staff.get_by_role("heading", name="Зарегистрировать пациента", exact=True)
@@ -183,8 +200,125 @@ try:
         assignment_form.get_by_role("button", name="Сохранить", exact=True).click()
         expect(assignment_form.get_by_role("button", name="Отозвать", exact=True)).to_be_visible()
         staff.get_by_role("button", name="Закрыть форму", exact=True).click()
+        staff.get_by_role("button", name="Открыть SYN-BROWSER-001", exact=True).click()
+        staff.get_by_role("button", name="Импорт DICOM", exact=True).click()
+        print("Browser checkpoint: upload dialog", flush=True)
+        for width in (320, 375, 414, 768, 1440):
+            staff.set_viewport_size({"width": width, "height": 900})
+            dropzone = staff.locator(".dicom-dropzone")
+            expect(dropzone).to_be_visible()
+            staff.get_by_label("DICOM или ZIP", exact=True).focus()
+            assert dropzone.evaluate("el => getComputedStyle(el).outlineStyle") != "none"
+            assert staff.get_by_role("dialog").evaluate("el => el.scrollWidth <= el.clientWidth")
+            staff.screenshot(path=f"test-results/upload-picker-{width}.png")
+        staff.set_viewport_size({"width": 1440, "height": 900})
+        payload = BytesIO()
+        from uuid import uuid4
+
+        study_uid = "2.25." + str(uuid4().int)
+        with zipfile.ZipFile(payload, "w") as archive:
+            for number in range(1, 9):
+                archive.writestr(f"slice-{number}.dcm", fixture(number, "SYN-BROWSER-001", study_uid))
+        staff.get_by_label("DICOM или ZIP", exact=True).set_input_files(
+            {"name": "synthetic.zip", "mimeType": "application/zip", "buffer": payload.getvalue()}
+        )
+        expect(staff.locator(".dicom-dropzone").get_by_text("synthetic.zip", exact=True)).to_be_visible()
+        # The response event fires on headers; only requestfinished guarantees its body is available.
+        with staff.expect_event(
+            "requestfinished",
+            predicate=lambda r: r.method == "POST" and r.url.endswith("/imports"),
+            timeout=15000,
+        ) as finished:
+            staff.get_by_role("button", name="Загрузить на проверку", exact=True).click()
+        uploaded = finished.value.response()
+        assert uploaded.status == 202
+        study_id = uploaded.json()["study_id"]
+        expect(staff.get_by_text("В очереди на проверку", exact=True)).to_be_visible()
+        print("Browser checkpoint: worker start", flush=True)
+        subprocess.run(
+            [sys.executable, "-m", "app.worker", "--once"],
+            env={
+                **os.environ,
+                "DATABASE_URL": os.environ["TEST_DATABASE_URL"],
+                "PUBLIC_ORIGIN": "http://127.0.0.1:5174",
+                "IMAGING_ROOT": imaging_directory.name,
+            },
+            check=True,
+            timeout=75,
+        )
+        expect(staff.get_by_text("Ожидает подтверждения", exact=True)).to_be_visible(timeout=10000)
+        print("Browser checkpoint: worker reviewed", flush=True)
         doctor = login("doctor")
         expect(doctor.get_by_role("button", name="Открыть SYN-BROWSER-001", exact=True)).to_be_visible()
+        expect(doctor.get_by_role("article", name="Карточка исследования", exact=True)).to_be_visible()
+        expect(doctor.get_by_role("region", name="Последние события", exact=True)).to_be_visible()
+        doctor.get_by_role("article", name="Карточка исследования", exact=True).get_by_role(
+            "button", name="Открыть исследование", exact=True
+        ).click()
+        expect(doctor.locator("#study-details")).to_be_visible()
+        expect(doctor.get_by_text("Исследование открыто", exact=True)).to_be_visible()
+        for width in (320, 375, 414, 768, 1440):
+            doctor.set_viewport_size({"width": width, "height": 900})
+            assert doctor.evaluate("document.documentElement.scrollWidth <= innerWidth")
+            doctor.screenshot(path=f"test-results/context-rail-{width}.png", full_page=True)
+        doctor.set_viewport_size({"width": 1440, "height": 900})
+        doctor.get_by_role("button", name="Открыть SYN-BROWSER-001", exact=True).click()
+        expect(doctor.get_by_text("Снимки ещё не подтверждены сотрудником.", exact=False)).to_be_visible()
+        assert (
+            doctor.context.request.get(f"http://127.0.0.1:5174/api/doctor/studies/{study_id}/imaging").status
+            == 404
+        )
+        staff.get_by_role("checkbox").check()
+        staff.get_by_role("button", name="Подтвердить исследование", exact=True).click()
+        expect(staff.get_by_text("Доступно врачу", exact=True)).to_be_visible()
+        for width in (320, 375, 768, 1440):
+            staff.set_viewport_size({"width": width, "height": 900})
+            assert staff.get_by_role("dialog").evaluate("el => el.scrollWidth <= el.clientWidth")
+            staff.screenshot(path=f"test-results/import-{width}.png")
+        staff.set_viewport_size({"width": 1440, "height": 900})
+        staff.get_by_role("button", name="Закрыть форму", exact=True).click()
+        doctor.get_by_role("button", name="Обновить", exact=True).click()
+        doctor.get_by_role("button", name="Открыть SYN-BROWSER-001", exact=True).click()
+        expect(doctor.get_by_role("link", name="Открыть просмотр", exact=True)).to_be_visible()
+        with doctor.expect_download() as received:
+            doctor.get_by_role("link", name="Скачать DICOM", exact=True).click()
+        import hashlib
+
+        with zipfile.ZipFile(received.value.path()) as archive:
+            assert sorted(hashlib.sha256(archive.read(n)).hexdigest() for n in archive.namelist()) == sorted(
+                hashlib.sha256(fixture(n, "SYN-BROWSER-001", study_uid)).hexdigest() for n in range(1, 9)
+            )
+        print("Browser checkpoint: download verified", flush=True)
+        viewer = doctor.context.new_page()
+        frames = []
+        viewer.on("response", lambda r: frames.append((r.status, r.url)) if "/frames/1" in r.url else None)
+        viewer.on("pageerror", lambda error: errors.append(str(error)))
+        viewer.on(
+            "request",
+            lambda r: (
+                external.append(r.url)
+                if not r.url.startswith(("http://127.0.0.1:8091", "blob:", "data:"))
+                else None
+            ),
+        )
+        viewer.goto(
+            doctor.get_by_role("link", name="Открыть просмотр", exact=True).get_attribute("href"),
+            timeout=60000,
+        )
+        viewer.wait_for_function(
+            "performance.getEntriesByType('resource').some(r => r.name.includes('/frames/1'))", timeout=60000
+        )
+        viewer.locator("canvas").first.wait_for(timeout=30000)
+        for text in ("Skip all", "Confirm and hide"):
+            button = viewer.get_by_text(text, exact=True)
+            if button.count() and button.first.is_visible():
+                button.first.click()
+        assert any(status == 200 for status, _ in frames), "Protected viewer did not load frames"
+        assert "Generated circles" in viewer.locator("body").inner_text()
+        assert viewer.locator("canvas").first.evaluate("c => c.width > 0 && c.height > 0")
+        viewer.screenshot(path="test-results/protected-viewer.png")
+        frame_url = next(url for status, url in frames if status == 200)
+        print("Browser checkpoint: viewer rendered", flush=True)
         repeat = browser.new_page()
         repeat.goto("http://127.0.0.1:5174")
         repeat.get_by_label("Электронная почта").fill("doctor@example.test")
@@ -201,8 +335,60 @@ try:
         assignment_form.get_by_role("button", name="Отозвать", exact=True).click()
         expect(assignment_form.get_by_text("SYNTHETIC doctor · Отозвано", exact=True)).to_be_visible()
         staff.get_by_role("button", name="Закрыть форму", exact=True).click()
+        assert viewer.context.request.get(frame_url).status == 404
+        assert (
+            viewer.context.request.get(
+                f"http://127.0.0.1:8091/api/doctor/studies/{study_id}/originals",
+                headers={"Range": "bytes=0-127"},
+            ).status
+            == 404
+        )
+        viewer.close()
         doctor.get_by_role("button", name="Обновить", exact=True).click()
         expect(doctor.get_by_text("Назначенные исследования не найдены", exact=True)).to_be_visible()
+        expect(
+            doctor.get_by_role("article", name="Карточка исследования", exact=True).get_by_role("button")
+        ).to_have_count(0)
+        print("Browser checkpoint: revoke verified", flush=True)
+        # Regression: latest eligible study may sit beyond25 blocked rows in the staff register.
+        from datetime import timedelta
+        from uuid import UUID
+
+        from sqlalchemy import delete
+
+        from app.models import Study
+
+        with Session(app.state.engine) as db, db.begin():
+            original = db.get(Study, UUID(study_id))
+            blocked = [
+                Study(
+                    patient_id=original.patient_id,
+                    title=f"SYNTHETIC BLOCKED {n}",
+                    modality="CBCT",
+                    state="BLOCKED",
+                    created_at=datetime.now(UTC) + timedelta(days=1),
+                )
+                for n in range(25)
+            ]
+            db.add_all(blocked)
+            db.flush()
+            blocked_ids = [row.id for row in blocked]
+        staff.get_by_role("button", name="Обновить", exact=True).click()
+        expect(staff.get_by_role("button", name="Открыть SYN-BROWSER-001", exact=True)).to_have_count(25)
+        recent = staff.get_by_role("article", name="Карточка исследования", exact=True)
+        expect(recent.get_by_role("heading", name="SYNTHETIC BROWSER STUDY", exact=True)).to_be_visible()
+        recent.get_by_role("button", name="Открыть исследование", exact=True).click()
+        expect(
+            staff.get_by_role("dialog").get_by_text("SYNTHETIC BROWSER STUDY · SYN-BROWSER-001", exact=True)
+        ).to_be_visible()
+        staff.get_by_role("button", name="Импорт DICOM", exact=True).click()
+        expect(staff.get_by_role("dialog", name="Импорт DICOM", exact=True)).to_be_visible()
+        expect(staff.get_by_text("Доступно врачу", exact=True)).to_be_visible()
+        staff.get_by_role("button", name="Закрыть форму", exact=True).click()
+        with Session(app.state.engine) as db, db.begin():
+            db.execute(delete(Study).where(Study.id.in_(blocked_ids)))
+        staff.get_by_role("button", name="Обновить", exact=True).click()
+        expect(staff.get_by_role("button", name="Открыть SYN-BROWSER-001", exact=True)).to_have_count(1)
         admin = login("admin")
         expect(admin.get_by_role("heading", name="Команда и доступы", exact=True)).to_be_visible()
         assert admin.context.request.get("http://127.0.0.1:5174/api/doctor/studies").status == 403
@@ -219,7 +405,7 @@ try:
         admin.set_viewport_size({"width": 390, "height": 844})
         admin.screenshot(path="test-results/mobile.png", full_page=True)
         for role, page in (("staff", staff), ("doctor", doctor), ("admin", admin)):
-            for width in (320, 375, 414, 768, 1024, 1440, 1920):
+            for width in (320, 360, 375, 390, 414, 430, 600, 768, 820, 1024, 1366, 1440, 1920):
                 page.set_viewport_size({"width": width, "height": 900})
                 page.evaluate("window.scrollTo(0, 0)")
                 button = page.get_by_role("button", name="Выйти", exact=True)
@@ -282,7 +468,7 @@ try:
         assert not external, external
         browser.close()
         print(
-            "PASS browser: password/TOTP, staff registration/assignment, doctor isolation, revoke, admin denied medical access; external requests 0"
+            "PASS browser: password/TOTP, upload/worker/review, protected OHIF frames, byte-exact ZIP, doctor isolation, frame/Range revoke, admin denied; external requests 0"
         )
 except Exception as error:
     # Playwright assertion snapshots can include enrollment keys; never log those.
@@ -299,3 +485,4 @@ finally:
     server.should_exit = True
     thread.join(timeout=10)
     app.state.engine.dispose()
+    imaging_directory.cleanup()
