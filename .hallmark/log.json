@@ -1,0 +1,10 @@
+[
+  {
+    "date": "2026-11-13",
+    "scope": "shared cabinet view",
+    "macrostructure": "register-first workbench with on-demand task dialogs",
+    "theme": "existing FamilyDent handoff",
+    "enrichment": "none",
+    "brief": "Replace stacked form cards with study/team registers; preserve brand and server flows."
+  }
+]

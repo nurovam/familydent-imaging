@@ -144,19 +144,20 @@ try:
         patient_form = staff.locator("section").filter(
             has=staff.get_by_role("heading", name="Зарегистрировать пациента", exact=True)
         )
-        study_panel = staff.locator("section").filter(
-            has=staff.get_by_role("heading", name="Зарегистрировать исследование", exact=True)
+        expect(staff.get_by_role("heading", name="Зарегистрировать пациента", exact=True)).to_have_count(0)
+        expect(staff.get_by_role("heading", name="Зарегистрировать исследование", exact=True)).to_have_count(
+            0
         )
-        patient_box, study_box = patient_form.bounding_box(), study_panel.bounding_box()
-        assert patient_box and study_box
-        assert abs(patient_box["y"] - study_box["y"]) < 8, "Registration forms should share a desktop row"
-        assert (
-            patient_form.get_by_role("button", name="Сохранить", exact=True).bounding_box()["width"] < 260
-        ), "Submit button should fit its label"
+        new_patient = staff.get_by_role("button", name="Новый пациент", exact=True)
+        new_patient.click()
+        expect(staff.get_by_role("dialog", name="Зарегистрировать пациента", exact=True)).to_be_visible()
         patient_form.get_by_label("Внутренний ID пациента").fill("SYN-BROWSER-001")
         patient_form.get_by_label("ФИО пациента").fill("SYNTHETIC BROWSER PATIENT")
         patient_form.get_by_role("button", name="Сохранить", exact=True).click()
         expect(patient_form.get_by_role("status")).to_have_text("Сохранено")
+        staff.get_by_role("button", name="Закрыть форму", exact=True).click()
+        expect(new_patient).to_be_focused()
+        staff.get_by_role("button", name="Новое исследование", exact=True).click()
         study_form = staff.locator("section").filter(
             has=staff.get_by_role("heading", name="Зарегистрировать исследование", exact=True)
         )
@@ -168,10 +169,12 @@ try:
         study_form.get_by_label("Исследование", exact=True).fill("SYNTHETIC BROWSER STUDY")
         study_form.get_by_role("button", name="Сохранить", exact=True).click()
         expect(study_form.get_by_role("status")).to_have_text("Сохранено")
+        staff.get_by_role("button", name="Закрыть форму", exact=True).click()
         staff.get_by_role("button", name="Открыть SYN-BROWSER-001", exact=True).click()
         assignment_form = staff.locator("section").filter(
             has=staff.get_by_role("heading", name="Назначить врачу", exact=True)
         )
+        expect(staff.get_by_role("dialog", name="Назначить врачу", exact=True)).to_be_visible()
         Path("test-results").mkdir(exist_ok=True)
         staff.screenshot(
             path="test-results/staff-before-assignment.png", full_page=True, mask=[staff.locator("input")]
@@ -179,6 +182,7 @@ try:
         assignment_form.get_by_role("combobox").select_option(label="SYNTHETIC doctor")
         assignment_form.get_by_role("button", name="Сохранить", exact=True).click()
         expect(assignment_form.get_by_role("button", name="Отозвать", exact=True)).to_be_visible()
+        staff.get_by_role("button", name="Закрыть форму", exact=True).click()
         doctor = login("doctor")
         expect(doctor.get_by_role("button", name="Открыть SYN-BROWSER-001", exact=True)).to_be_visible()
         repeat = browser.new_page()
@@ -193,13 +197,21 @@ try:
         other = login("other")
         expect(other.get_by_text("Назначенные исследования не найдены", exact=True)).to_be_visible()
         # Neither another browser nor membership in the same clinic grants study access.
+        staff.get_by_role("button", name="Открыть SYN-BROWSER-001", exact=True).click()
         assignment_form.get_by_role("button", name="Отозвать", exact=True).click()
         expect(assignment_form.get_by_text("SYNTHETIC doctor · Отозвано", exact=True)).to_be_visible()
+        staff.get_by_role("button", name="Закрыть форму", exact=True).click()
         doctor.get_by_role("button", name="Обновить", exact=True).click()
         expect(doctor.get_by_text("Назначенные исследования не найдены", exact=True)).to_be_visible()
         admin = login("admin")
         expect(admin.get_by_role("heading", name="Команда и доступы", exact=True)).to_be_visible()
         assert admin.context.request.get("http://127.0.0.1:5174/api/doctor/studies").status == 403
+        assert admin.get_by_role("dialog").count() == 0
+        admin.get_by_role("button", name="Добавить аккаунт", exact=True).click()
+        expect(admin.get_by_role("dialog", name="Создать проверенный аккаунт", exact=True)).to_be_visible()
+        admin.keyboard.press("Escape")
+        expect(admin.get_by_role("dialog")).to_have_count(0)
+        expect(admin.get_by_role("button", name="Добавить аккаунт", exact=True)).to_be_focused()
         Path("test-results").mkdir(exist_ok=True)
         doctor.screenshot(path="test-results/doctor.png")
         staff.screenshot(path="test-results/staff.png", full_page=True)
@@ -233,6 +245,21 @@ try:
                 }""")
                 assert ratio >= 4.5, f"Logout contrast: {ratio}"
                 page.screenshot(path=f"test-results/{role}-{width}.png", full_page=True)
+                if role in ("staff", "admin"):
+                    trigger = page.get_by_role(
+                        "button", name="Новый пациент" if role == "staff" else "Добавить клинику", exact=True
+                    )
+                    trigger.click()
+                    dialog = page.get_by_role("dialog")
+                    expect(dialog).to_be_visible()
+                    assert dialog.evaluate("el => el.scrollWidth <= el.clientWidth"), (
+                        "Dialog horizontal overflow"
+                    )
+                    assert dialog.bounding_box()["width"] <= width, "Dialog wider than viewport"
+                    page.screenshot(path=f"test-results/{role}-dialog-{width}.png")
+                    page.keyboard.press("Escape")
+                    expect(dialog).to_have_count(0)
+                    expect(trigger).to_be_focused()
         # A failed logout keeps the button usable; successful keyboard activation revokes the session.
         other.set_viewport_size({"width": 375, "height": 844})
         other.route(

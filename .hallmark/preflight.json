@@ -1,6 +1,6 @@
 {
   "date": "2026-11-13",
-  "scope": "Workspace.tsx cabinet layout corrections",
+  "scope": "Workspace.tsx register-first composition",
   "source": "Медицинский-портал-FamilyDent/DESIGN.md",
   "fonts": [
     "Roboto Serif",
@@ -17,8 +17,9 @@
     "source export"
   ],
   "fix": [
-    "one-column stretched forms",
-    "full-width submit buttons",
-    "inherited muted logout color"
+    "permanently visible creation forms",
+    "repeated equal-weight rounded cards",
+    "duplicated headings and technical notice",
+    "lack of list-first workflow"
   ]
 }
