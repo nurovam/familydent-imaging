@@ -64,3 +64,19 @@ docker compose -f infra/local/compose.yaml --profile imaging up -d viewer
 Обязательный backend CI запускает реальные PostgreSQL/Orthanc/OHIF и тот же browser scenario; requirements с hashes, снимки только synthetic, retention7days. Старый spike остаётся отдельным regression job. Публикация образов/deployment выключены.
 
 Проверено локально: 27 pytest, реальный browser workflow с OHIF canvas и8 frames, byte-exact ZIP, отзыв frame/Range и stream abort. Static: Ruff/mypy/OpenAPI; frontend lint/types/test/build, npm audit0, pip-audit0; 19 исходных design assets неизменны. Проверены synthetic screenshots import320/375/768/1440 и матрица кабинетов320–1920, горизонтального overflow нет. Системная сборка Node24.15 не поддерживает TS strip; использовать установленный Node24.18 из nvm, CI использует официальный Node24.
+
+## Результат отдельного ревью
+
+Независимое read-only ревью всей ветки не выявило Critical/Important blockers в согласованных synthetic-local границах. Reviewer отдельно проверил исходники, migration, Ruff/format/OpenAPI/whitespace и in-memory hostile archive/Range probes. Полный PostgreSQL/browser прогон выполнен автором реализации, не reviewer, чтобы не запускать два очищающих testdb сценария одновременно.
+
+Решения по отложенным областям, рассмотренным reviewer:
+
+- Клинические Romexis, compressed/enhanced/multiframe, полная DICOM conformance и диагностическая точность остаются вне этапа. Цена ошибочного применения: неподтверждённая совместимость/качество диагностики, поэтому реальные файлы запрещены.
+- Объём реальных CBCT, throughput, atomic quotas, учёт ёмкости Orthanc, orphan/TTL cleanup, pool saturation, backpressure и multi-worker scaling требуют отдельного этапа измерений/эксплуатации. Цена переноса текущих dev лимитов в работу: исчерпание места/соединений или отказ импорта; production не разрешён.
+- TLS, service auth и изоляция от других локальных процессов не моделируются loopback стендом. Он доверяет машине разработчика; перед рабочим запуском topology должна быть заменена private service network без host Orthanc ports.
+- Уже переданные/буферизованные байты не отзываются. Backend закрывает последующие запросы и прекращает генерацию новых chunks. Ошибочно считать отзыв дистанционным удалением скачанных копий.
+- Точные aggregate QIDO labels/counts после частичного crash и subset retry, а также визуальные ошибки expired session/failed download/archive outage reviewer не подтвердил отдельным live прогоном. Это не расширяет опубликованный instance/frame whitelist; перед пилотом нужны соответствующие recovery/UX сценарии.
+- Power-loss durability, вмешательство оператора в storage, backups/restore и operational recovery — отдельный эксплуатационный этап. Текущий тест покрывает process interruption, не отказ диска/питания.
+- Patient access/recovery, независимые клиники, SMTP/NAS и лицензированная Romexis Viewer distribution остаются согласованным backlog. Их отсутствие нельзя считать готовностью полного MVP; bundle и production выключены.
+
+Незначительные замечания, отложенные reviewer: нет. Следующая часть после приёмки этого PR — совместимость форматов/размеров на разрешённых обезличенных fixtures и эксплуатационная подготовка; не начинать без новой команды владельца.
