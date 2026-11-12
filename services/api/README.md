@@ -69,7 +69,7 @@ Dependencies pinned в uv.lock и requirements*.txt с hashes. Regenerate: `uv e
 
 ## Открытые ограничения
 
-Нет recovery/password change/MFA reset/rotation/операционного cleanup auth tables; до пилота нужен проверенный регламент. Аккаунт создаётся уполномоченным сотрудником после проверки врача; процедура пока организационная. Клиники — справочник одного оператора FamilyDent, не независимые tenants. UI staff/admin показывает первые страницы справочников; полноценная навигация больших staff списков и визуальная приёмка новых security forms ещё впереди. Ключ настройки пока вводится вручную, QR не реализован. Нет DICOM import/ZIP/production streaming, READY transition или policy actions для выдачи изображений. При переносе imaging использовать отдельную action-aware READY policy, а не только текущую metadata policy. Этот этап не делает портал production-ready.
+Нет recovery/password change/MFA reset/rotation/операционного cleanup auth tables; до пилота нужен проверенный регламент. Аккаунт создаётся уполномоченным сотрудником после проверки врача; процедура пока организационная. Клиники — справочник одного оператора FamilyDent, не независимые tenants. UI staff/admin показывает первые страницы справочников; полноценная навигация больших staff списков и визуальная приёмка новых security forms ещё впереди. При первичной настройке QR строится локально в браузере из provisioning URI; ручной ключ доступен как fallback. При обычном входе QR и ключ не показываются. Нет DICOM import/ZIP/production streaming, READY transition или policy actions для выдачи изображений. При переносе imaging использовать отдельную action-aware READY policy, а не только текущую metadata policy. Этот этап не делает портал production-ready.
 
 ## Данные для ручной проверки
 
@@ -84,3 +84,5 @@ uv run python -m app.manage seed-studies
 Повторный запуск не создаёт дубли и не восстанавливает отозванные доступы, не меняет existing patients, статусы studies, пароли, TOTP или сессии. Коллизия внутреннего ID прекращает транзакцию без перезаписи. Это metadata REGISTERED/BLOCKED, **не DICOM-файлы**: реальный просмотр по-прежнему в отдельном synthetic imaging spike. Никаких migrations/удалений/сбросов для заполнения не требуется.
 
 Актуально18 PostgreSQL tests, включая idempotent seed, разные doctor scopes и сохранность MFA/session/revocations.
+
+Browser E2E декодирует QR в памяти (включая mobile390px), сверяет secret/issuer, входит кодом из QR и проверяет исчезновение QR после настройки и при повторном входе. Изображения enrollment QR не записываются в test artifacts; ошибки browser-check не печатают sensitive aria snapshots.

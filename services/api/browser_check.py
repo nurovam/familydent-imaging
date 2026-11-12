@@ -6,12 +6,16 @@ import subprocess
 import threading
 import time
 from datetime import UTC, datetime
+from io import BytesIO
 from pathlib import Path
+from urllib.parse import parse_qs, urlsplit
 
 import httpx
 import pyotp
 import uvicorn
+import zxingcpp
 from alembic.config import Config
+from PIL import Image
 from playwright.sync_api import expect, sync_playwright
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session
@@ -116,11 +120,24 @@ try:
             key = page.get_by_label("Ключ настройки TOTP")
             expect(key).to_be_visible()
             secret = key.input_value()
-            page.get_by_label("Код аутентификатора", exact=True).fill(
-                pyotp.TOTP(secret).at(datetime.now(UTC))
-            )
+            if name == "staff":
+                page.set_viewport_size({"width": 390, "height": 844})
+            qr = page.get_by_role("img", name="QR-код для настройки TOTP", exact=True)
+            expect(qr).to_be_visible(timeout=3000)
+            decoded = zxingcpp.read_barcodes(Image.open(BytesIO(qr.screenshot())))
+            assert len(decoded) == 1, "Enrollment QR could not be decoded"
+            uri = urlsplit(decoded[0].text)
+            params = parse_qs(uri.query)
+            assert uri.scheme == "otpauth" and uri.netloc == "totp", "Unexpected QR protocol"
+            assert params.get("secret") == [secret], "QR does not match enrollment key"
+            assert params.get("issuer") == ["FamilyDent Imaging"], "Unexpected issuer"
+            qr_code = pyotp.parse_uri(decoded[0].text).at(datetime.now(UTC))
+            page.get_by_label("Код аутентификатора", exact=True).fill(qr_code)
             page.get_by_role("button", name="Подтвердить вход", exact=True).click()
-            expect(page.get_by_role("button", name="Выйти", exact=True)).to_be_attached()
+            expect(page.get_by_role("button", name="Выйти", exact=True, include_hidden=True)).to_be_attached()
+            expect(qr).to_have_count(0)
+            expect(key).to_have_count(0)
+            page.set_viewport_size({"width": 1440, "height": 900})
             return page
 
         staff = login("staff")
@@ -155,6 +172,15 @@ try:
         expect(assignment_form.get_by_role("button", name="Отозвать", exact=True)).to_be_visible()
         doctor = login("doctor")
         expect(doctor.get_by_role("button", name="Открыть SYN-BROWSER-001", exact=True)).to_be_visible()
+        repeat = browser.new_page()
+        repeat.goto("http://127.0.0.1:5174")
+        repeat.get_by_label("Электронная почта").fill("doctor@example.test")
+        repeat.get_by_label("Пароль", exact=True).fill(password)
+        repeat.get_by_role("button", name="Продолжить", exact=True).click()
+        expect(repeat.get_by_role("heading", name="Подтвердите вход", exact=True)).to_be_visible()
+        expect(repeat.get_by_role("img", name="QR-код для настройки TOTP", exact=True)).to_have_count(0)
+        expect(repeat.get_by_label("Ключ настройки TOTP")).to_have_count(0)
+        repeat.close()
         other = login("other")
         expect(other.get_by_text("Назначенные исследования не найдены", exact=True)).to_be_visible()
         # Neither another browser nor membership in the same clinic grants study access.
@@ -177,6 +203,11 @@ try:
         print(
             "PASS browser: password/TOTP, staff registration/assignment, doctor isolation, revoke, admin denied medical access; external requests 0"
         )
+except Exception as error:
+    # Playwright assertion snapshots can include enrollment keys; never log those.
+    raise RuntimeError(
+        f"Synthetic browser check failed ({type(error).__name__}); no sensitive page snapshot logged"
+    ) from None
 finally:
     frontend.terminate()
     try:
