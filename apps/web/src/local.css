@@ -1,0 +1,6 @@
+@import '@fontsource/golos-text/cyrillic-400.css';
+@import '@fontsource/golos-text/cyrillic-500.css';
+@import '@fontsource/golos-text/latin-400.css';
+@import '@fontsource/roboto-serif/cyrillic-500.css';
+@import '@fontsource/roboto-serif/latin-500.css';
+.demo-notice{margin-bottom:24px}.study-details{margin-top:24px}.study-details p{margin-top:16px}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
