@@ -4,3 +4,6 @@
 @import '@fontsource/roboto-serif/cyrillic-500.css';
 @import '@fontsource/roboto-serif/latin-500.css';
 .demo-notice{margin-bottom:24px}.study-details{margin-top:24px}.study-details p{margin-top:16px}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.task-form{margin-top:24px}.account-row{padding:16px 0;border-bottom:1px solid var(--border);flex-wrap:wrap}.study-details .btn{margin-top:16px}
+
+.totp-qr{display:flex;justify-content:center;margin:16px 0}.totp-qr canvas{display:block;max-width:100%;height:auto;background:#fff}

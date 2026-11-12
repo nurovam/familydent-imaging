@@ -63,14 +63,75 @@ jobs:
         run: RUN_IMAGING_LIVE=1 .venv/bin/pytest -q
       - name: OHIF browser and revocation
         run: .venv/bin/python browser_check.py
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: synthetic-imaging-screenshots
+          path: experiments/imaging/test-results/*.png
+          retention-days: 7
       - name: Stack diagnostics and shutdown
         if: always()
         run: |
           docker compose logs --tail=40
           docker compose down
+  backend:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: services/api
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install pinned dependencies
+        run: |
+          python3 -m venv .venv
+          .venv/bin/pip install --require-hashes -r requirements-test.txt
+          .venv/bin/playwright install --with-deps chromium
+          npm --prefix ../../apps/web ci
+      - name: Start disposable PostgreSQL
+        run: |
+          python3 ../../infra/local/init_env.py
+          docker compose -f ../../infra/local/compose.yaml --profile test up -d --wait testdb
+      - name: Backend static and contract checks
+        run: |
+          .venv/bin/ruff check app tests browser_check.py export_openapi.py
+          .venv/bin/ruff format --check app tests alembic browser_check.py export_openapi.py
+          .venv/bin/mypy app
+          .venv/bin/python export_openapi.py --check
+          .venv/bin/pip-audit --disable-pip --require-hashes -r requirements.txt
+      - name: PostgreSQL security and migration tests
+        run: .venv/bin/pytest -q
+      - name: Real browser password TOTP and assignment workflow
+        run: .venv/bin/python browser_check.py
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: synthetic-backend-screenshots
+          path: services/api/test-results/*.png
+          retention-days: 7
+      - name: Stop disposable database
+        if: always()
+        run: docker compose -f ../../infra/local/compose.yaml --profile test down
+  secrets:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Redacted history scan
+        run: docker run --rm --network none -v "$PWD:/repo:ro" zricethezav/gitleaks:v8.30.1@sha256:c00b6bd0aeb3071cbcb79009cb16a60dd9e0a7c60e2be9ab65d25e6bc8abbb7f git /repo --redact --no-banner
   ci-required:
     if: always()
-    needs: [quality, frontend, imaging-spike]
+    needs: [quality, frontend, imaging-spike, backend, secrets]
     runs-on: ubuntu-24.04
     timeout-minutes: 2
     steps:
@@ -79,4 +140,6 @@ jobs:
           QUALITY_RESULT: ${{ needs.quality.result }}
           FRONTEND_RESULT: ${{ needs.frontend.result }}
           IMAGING_RESULT: ${{ needs.imaging-spike.result }}
-        run: test "$QUALITY_RESULT" = success && test "$FRONTEND_RESULT" = success && test "$IMAGING_RESULT" = success
+          BACKEND_RESULT: ${{ needs.backend.result }}
+          SECRETS_RESULT: ${{ needs.secrets.result }}
+        run: test "$QUALITY_RESULT" = success && test "$FRONTEND_RESULT" = success && test "$IMAGING_RESULT" = success && test "$BACKEND_RESULT" = success && test "$SECRETS_RESULT" = success

@@ -23,4 +23,4 @@ for name in filter(None, tracked):
     assert path.suffix.lower() not in {'.dcm', '.dicom', '.zip', '.pem', '.key', '.dump', '.bak'}, f'Forbidden artifact: {name}'
     assert not (path.name.startswith('.env') and path.name != '.env.example'), name
 print('PASS: manifest, JSON, 19 immutable design sources, tracked artifact policy')
-print('Secret scanning and application tests will be added with application tooling.')
+print('Baseline checks only; CI also requires frontend, backend, imaging and redacted secret scanning.')

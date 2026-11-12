@@ -1,10 +1,9 @@
-import { StrictMode, useState } from 'react';
-import { createRoot } from 'react-dom/client';
+import { useState } from 'react';
 import { filterStudies, studies, type Study } from './studies';
 import './design.css';
 import './local.css';
 
-function App() {
+export function DemoApp() {
   const [query, setQuery] = useState('');
   const [modality, setModality] = useState('all');
   const [status, setStatus] = useState('all');
@@ -33,4 +32,3 @@ function App() {
     </div>
   </div>;
 }
-createRoot(document.getElementById('root')!).render(<StrictMode><App /></StrictMode>);

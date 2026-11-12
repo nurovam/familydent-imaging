@@ -31,3 +31,11 @@ playwright-report/
 test-results/
 *.log
 .DS_Store
+
+# Local-only synthetic credentials
+infra/local/.demo-credentials
+.mypy_cache/
+.ruff_cache/
+
+# Editor swap files may contain local credentials
+*.swp
