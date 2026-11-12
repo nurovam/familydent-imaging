@@ -1,3 +1,4 @@
+import { StudyContext } from './StudyContext';
 import { UiIcon, initials } from './UiIcon';
 import { DoctorImaging, ImportTask } from './ImagingTasks';
 import { TaskDialog } from './TaskDialog';
@@ -40,6 +41,7 @@ function DoctorStudies({ report }: { report: Report }) {
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState<ServerStudy | null>(null);
   const [version, setVersion] = useState(0);
+  const [contextVersion, setContextVersion] = useState(0);
   useEffect(() => {
     const controller = new AbortController();
     setPage(null); setSelected(null); setLoading(true);
@@ -47,14 +49,15 @@ function DoctorStudies({ report }: { report: Report }) {
       .then(setPage).catch(e => { if (!controller.signal.aborted) report(e); }).finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
   }, [query, offset, version, report]);
+  useEffect(() => { if (selected) document.getElementById('study-details')?.scrollIntoView({ block: 'nearest' }); }, [selected]);
   async function open(id: string) {
     setSelected(null);
-    try { setSelected(await api<ServerStudy>(`/doctor/studies/${id}`)); } catch (e) { report(e); }
+    try { setSelected(await api<ServerStudy>(`/doctor/studies/${id}`)); setContextVersion(v => v + 1); } catch (e) { setContextVersion(v => v + 1); report(e); }
   }
   return <><header className="page-head"><div><h1>Мои исследования</h1><p>Только исследования, назначенные вам сотрудником FamilyDent.</p></div><button className="btn" onClick={() => setVersion(v => v + 1)}><UiIcon name="refresh" />Обновить</button></header>
-    <section className="panel study-register" aria-label="Назначенные исследования"><div className="panel-head"><h2>Назначенные исследования</h2>{page && <span className="register-count">{page.total}</span>}</div><div className="filters"><label className="search"><UiIcon name="search" /><span className="sr-only">Поиск по пациенту или ID</span><input type="search" maxLength={160} placeholder="Поиск по пациенту или ID" value={query} onChange={e => { setQuery(e.target.value); setOffset(0); }} /></label></div>
+    <div className="cabinet-grid"><div className="cabinet-main"><section className="panel study-register" aria-label="Назначенные исследования"><div className="panel-head"><h2>Назначенные исследования</h2>{page && <span className="register-count">{page.total}</span>}</div><div className="filters"><label className="search"><UiIcon name="search" /><span className="sr-only">Поиск по пациенту или ID</span><input type="search" maxLength={160} placeholder="Поиск по пациенту или ID" value={query} onChange={e => { setQuery(e.target.value); setOffset(0); }} /></label></div>
       {loading && <p className="empty" role="status">Загрузка…</p>}{page && <><StudyTable studies={page.items} onOpen={open} />{page.items.length === 0 && <p className="empty">Назначенные исследования не найдены</p>}<div className="table-bottom"><span>Найдено: {page.total}</span><div className="row"><button className="btn" disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - 25))}>Назад</button><button className="btn" disabled={offset + 25 >= page.total} onClick={() => setOffset(offset + 25)}>Далее</button></div></div></>}
-    </section>{selected && <section className="panel panel-pad study-details"><h2>{selected.title}</h2><p>{selected.display_name} · {selected.local_identifier}</p><DoctorImaging key={selected.id} study={selected} /><button className="btn" onClick={() => setSelected(null)}>Закрыть</button></section>}</>;
+    </section>{selected && <section className="panel panel-pad study-details" id="study-details"><h2>{selected.title}</h2><p>{selected.display_name} · {selected.local_identifier}</p><DoctorImaging key={selected.id} study={selected} /><button className="btn" onClick={() => setSelected(null)}>Закрыть</button></section>}</div><StudyContext version={version + contextVersion} onOpen={id => void open(id)} report={report} /></div></>;
 }
 
 function StudyTable({ studies, onOpen }: { studies: ServerStudy[]; onOpen: (id: string) => void }) {
@@ -82,6 +85,7 @@ function Staff({ account, report }: { account: Account; report: Report }) {
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [selected, setSelected] = useState('');
   const [importing, setImporting] = useState<ServerStudy | null>(null);
+  const [contextVersion, setContextVersion] = useState(0);
   const [grants, setGrants] = useState<{ id: string; doctor: string; revoked: boolean }[]>([]);
   const [patient, setPatient] = useState<PatientRecord | null>(null);
   const [patientQuery, setPatientQuery] = useState('');
@@ -90,13 +94,13 @@ function Staff({ account, report }: { account: Account; report: Report }) {
   const csrf = account.csrf_token;
   const reload = useCallback(async () => {
     const [page, people] = await Promise.all([api<Page<ServerStudy>>('/staff/studies'), api<Doctor[]>('/staff/doctors')]);
-    setRows(page.items); setDoctors(people);
+    setRows(page.items); setDoctors(people); setContextVersion(v => v + 1);
   }, []);
   useEffect(() => { reload().catch(report); }, [reload, report]);
   async function open(id: string) { const version = ++opening.current; setSelected(''); setGrants([]); try { const result = await api<{ id: string; doctor: string; revoked: boolean }[]>(`/staff/studies/${id}/assignments`); if (version === opening.current) { setGrants(result); setSelected(id); } } catch (e) { report(e); } }
   return <><header className="page-head"><div><h1>Исследования</h1><p>Регистрация, импорт снимков и назначения врачам.</p></div>
     <div className="workbench-actions page-actions" aria-label="Действия с исследованиями"><button className="btn primary" onClick={() => setTask('study')}><UiIcon name="plus" />Новое исследование</button><button className="btn" onClick={() => setTask('patient')}>Новый пациент</button><button className="btn" onClick={() => setTask('account')}>Добавить врача</button></div></header>
-    <div className="workbench-list"><section className="panel study-register"><div className="panel-head"><h2>Последние исследования</h2><button className="btn" onClick={() => reload().catch(report)}><UiIcon name="refresh" />Обновить</button></div><StudyTable studies={rows} onOpen={id => void open(id)} />{rows.length === 0 && <p className="empty">Исследований пока нет. Зарегистрируйте первое исследование.</p>}</section></div>
+    <div className="cabinet-grid"><div className="workbench-list cabinet-main"><section className="panel study-register"><div className="panel-head"><h2>Последние исследования</h2><button className="btn" onClick={() => reload().catch(report)}><UiIcon name="refresh" />Обновить</button></div><StudyTable studies={rows} onOpen={id => void open(id)} />{rows.length === 0 && <p className="empty">Исследований пока нет. Зарегистрируйте первое исследование.</p>}</section></div><StudyContext version={contextVersion} onOpen={id => void open(id)} report={report} /></div>
     {task === 'patient' && <TaskDialog title="Зарегистрировать пациента" onClose={() => setTask(null)}><TaskForm title="Зарегистрировать пациента" submit={async data => {
       const created = await api<{ id: string }>('/staff/patients', { method: 'POST', csrf, body: { local_identifier: data.get('identifier'), display_name: data.get('name') } }); setPatient({ id: created.id, local_identifier: String(data.get('identifier')), display_name: String(data.get('name')) }); setPatientQuery(String(data.get('identifier')));
     }}><Field name="identifier" label="Внутренний ID пациента" maxLength={80} /><Field name="name" label="ФИО пациента" />{patient && <p>Выбрана запись: {patient.local_identifier} · {patient.display_name}</p>}</TaskForm></TaskDialog>}
@@ -106,8 +110,8 @@ function Staff({ account, report }: { account: Account; report: Report }) {
     }}><label className="field">Внутренний ID для выбора записи<input value={patientQuery} maxLength={80} onChange={e => { setPatientQuery(e.target.value); setPatient(null); setPatientMessage(''); }} /></label><button className="btn" type="button" onClick={async () => { try { const found = await api<PatientRecord[]>(`/staff/patients?local_identifier=${encodeURIComponent(patientQuery)}`); setPatient(found[0] ?? null); setPatientMessage(found.length ? '' : 'Запись не найдена. Проверьте внутренний ID.'); } catch (e) { report(e); } }}>Найти запись</button>{patientMessage && <p role="status">{patientMessage}</p>}{patient && <p>Пациент исследования: {patient.local_identifier} · {patient.display_name}</p>}<input type="hidden" name="patient" value={patient?.id ?? ''} /><Field name="title" label="Исследование" maxLength={200} /><label className="field">Тип исследования<select name="modality"><option>CBCT</option><option>OPG</option><option>IO</option></select></label></TaskForm></TaskDialog>}
     {selected && <TaskDialog title="Назначить врачу" onClose={() => setSelected('')}><TaskForm title="Назначить врачу" submit={async data => {
       const person = doctors.find(d => `${d.id}:${d.clinic_id}` === data.get('doctor')); if (!person) throw new Error();
-      await api(`/staff/studies/${selected}/assignments`, { method: 'POST', csrf, body: { doctor_id: person.id, clinic_id: person.clinic_id } }); await open(selected);
-    }}><p>{rows.find(s => s.id === selected)?.title} · {rows.find(s => s.id === selected)?.local_identifier}</p><button className="btn" type="button" onClick={() => { const study = rows.find(s => s.id === selected); if (study) { setSelected(''); setImporting(study); } }}><UiIcon name="upload" />Импорт DICOM</button><label className="field">Врач<select name="doctor" required><option value="">Выберите врача</option>{doctors.map(d => <option key={`${d.id}:${d.clinic_id}`} value={`${d.id}:${d.clinic_id}`}>{d.display_name}</option>)}</select></label>{grants.map(g => <div key={g.id} className="row between"><span>{g.doctor} · {g.revoked ? 'Отозвано' : 'Назначено'}</span>{!g.revoked && <button className="btn" type="button" onClick={async () => { try { await api(`/staff/assignments/${g.id}/revoke`, { method: 'POST', csrf }); await open(selected); } catch (e) { report(e); } }}>Отозвать</button>}</div>)}</TaskForm></TaskDialog>}
+      await api(`/staff/studies/${selected}/assignments`, { method: 'POST', csrf, body: { doctor_id: person.id, clinic_id: person.clinic_id } }); await open(selected); setContextVersion(v => v + 1);
+    }}><p>{rows.find(s => s.id === selected)?.title} · {rows.find(s => s.id === selected)?.local_identifier}</p><button className="btn" type="button" onClick={() => { const study = rows.find(s => s.id === selected); if (study) { setSelected(''); setImporting(study); } }}><UiIcon name="upload" />Импорт DICOM</button><label className="field">Врач<select name="doctor" required><option value="">Выберите врача</option>{doctors.map(d => <option key={`${d.id}:${d.clinic_id}`} value={`${d.id}:${d.clinic_id}`}>{d.display_name}</option>)}</select></label>{grants.map(g => <div key={g.id} className="row between"><span>{g.doctor} · {g.revoked ? 'Отозвано' : 'Назначено'}</span>{!g.revoked && <button className="btn" type="button" onClick={async () => { try { await api(`/staff/assignments/${g.id}/revoke`, { method: 'POST', csrf }); await open(selected); setContextVersion(v => v + 1); } catch (e) { report(e); } }}>Отозвать</button>}</div>)}</TaskForm></TaskDialog>}
     {importing && <TaskDialog title="Импорт DICOM" onClose={() => setImporting(null)}><ImportTask study={importing} csrf={csrf} onPublished={async () => { await reload(); setImporting({ ...importing, state: 'READY' }); }} /></TaskDialog>}
     {task === 'account' && <TaskDialog title="Создать проверенный аккаунт" onClose={() => setTask(null)}><AccountForm account={account} report={report} onSaved={reload} /></TaskDialog>}</>;
 }

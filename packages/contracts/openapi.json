@@ -113,6 +113,33 @@
         "title": "HTTPValidationError",
         "type": "object"
       },
+      "Overview": {
+        "properties": {
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/WorkspaceEvent"
+            },
+            "title": "Events",
+            "type": "array"
+          },
+          "latest": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StudySummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "latest",
+          "events"
+        ],
+        "title": "Overview",
+        "type": "object"
+      },
       "PasswordInput": {
         "additionalProperties": false,
         "properties": {
@@ -373,6 +400,33 @@
           "type"
         ],
         "title": "ValidationError",
+        "type": "object"
+      },
+      "WorkspaceEvent": {
+        "properties": {
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "study": {
+            "$ref": "#/components/schemas/StudySummary"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "created_at",
+          "study"
+        ],
+        "title": "WorkspaceEvent",
         "type": "object"
       }
     }
@@ -1535,6 +1589,27 @@
         "summary": "Publish",
         "tags": [
           "imaging imports"
+        ]
+      }
+    },
+    "/api/workspace/overview": {
+      "get": {
+        "operationId": "overview_api_workspace_overview_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Overview"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Overview",
+        "tags": [
+          "workspace"
         ]
       }
     }

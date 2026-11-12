@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import create_engine, text
 from sqlalchemy.exc import IntegrityError
 
-from . import admin, auth, imaging, imports, studies
+from . import admin, auth, imaging, imports, overview, studies
 from .config import Settings
 
 
@@ -71,6 +71,7 @@ def create_app(settings: Settings, now=None) -> FastAPI:
     app.include_router(admin.router)
     app.include_router(imports.router)
     app.include_router(imaging.router)
+    app.include_router(overview.router)
     return app
 
 

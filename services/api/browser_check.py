@@ -250,6 +250,18 @@ try:
         print("Browser checkpoint: worker reviewed", flush=True)
         doctor = login("doctor")
         expect(doctor.get_by_role("button", name="Открыть SYN-BROWSER-001", exact=True)).to_be_visible()
+        expect(doctor.get_by_role("article", name="Последнее поступление", exact=True)).to_be_visible()
+        expect(doctor.get_by_role("region", name="Последние события", exact=True)).to_be_visible()
+        doctor.get_by_role("article", name="Последнее поступление", exact=True).get_by_role(
+            "button", name="Открыть исследование", exact=True
+        ).click()
+        expect(doctor.locator("#study-details")).to_be_visible()
+        expect(doctor.get_by_text("Исследование открыто", exact=True)).to_be_visible()
+        for width in (320, 375, 414, 768, 1440):
+            doctor.set_viewport_size({"width": width, "height": 900})
+            assert doctor.evaluate("document.documentElement.scrollWidth <= innerWidth")
+            doctor.screenshot(path=f"test-results/context-rail-{width}.png", full_page=True)
+        doctor.set_viewport_size({"width": 1440, "height": 900})
         doctor.get_by_role("button", name="Открыть SYN-BROWSER-001", exact=True).click()
         expect(doctor.get_by_text("Снимки ещё не подтверждены сотрудником.", exact=False)).to_be_visible()
         assert (
@@ -334,6 +346,9 @@ try:
         viewer.close()
         doctor.get_by_role("button", name="Обновить", exact=True).click()
         expect(doctor.get_by_text("Назначенные исследования не найдены", exact=True)).to_be_visible()
+        expect(
+            doctor.get_by_role("article", name="Последнее поступление", exact=True).get_by_role("button")
+        ).to_have_count(0)
         print("Browser checkpoint: revoke verified", flush=True)
         admin = login("admin")
         expect(admin.get_by_role("heading", name="Команда и доступы", exact=True)).to_be_visible()
