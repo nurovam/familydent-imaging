@@ -1,0 +1,14 @@
+[project]
+name = "familydent-imaging-spike"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = ["fastapi", "uvicorn", "httpx", "pydicom", "pytest"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+
+[dependency-groups]
+dev = [
+    "playwright>=1.65.1",
+]

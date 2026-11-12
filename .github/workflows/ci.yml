@@ -39,9 +39,38 @@ jobs:
       - run: npm test
       - run: npm run build
       - run: npm audit --audit-level=high
+  imaging-spike:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: experiments/imaging
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - name: Install pinned test dependencies
+        run: |
+          python3 -m venv .venv
+          .venv/bin/pip install --require-hashes -r requirements-test.txt
+          .venv/bin/playwright install --with-deps chromium
+      - name: Start isolated synthetic stack
+        run: |
+          docker compose up -d --build
+          .venv/bin/python wait_ready.py
+          docker compose run --rm seed
+      - name: Policy and real DICOMweb tests
+        run: RUN_IMAGING_LIVE=1 .venv/bin/pytest -q
+      - name: OHIF browser and revocation
+        run: .venv/bin/python browser_check.py
+      - name: Stack diagnostics and shutdown
+        if: always()
+        run: |
+          docker compose logs --tail=40
+          docker compose down
   ci-required:
     if: always()
-    needs: [quality, frontend]
+    needs: [quality, frontend, imaging-spike]
     runs-on: ubuntu-24.04
     timeout-minutes: 2
     steps:
@@ -49,4 +78,5 @@ jobs:
         env:
           QUALITY_RESULT: ${{ needs.quality.result }}
           FRONTEND_RESULT: ${{ needs.frontend.result }}
-        run: test "$QUALITY_RESULT" = success && test "$FRONTEND_RESULT" = success
+          IMAGING_RESULT: ${{ needs.imaging-spike.result }}
+        run: test "$QUALITY_RESULT" = success && test "$FRONTEND_RESULT" = success && test "$IMAGING_RESULT" = success

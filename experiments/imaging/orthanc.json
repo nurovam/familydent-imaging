@@ -1,0 +1,1 @@
+{"Name":"SYNTHETIC-ONLY-SPIKE","RemoteAccessAllowed":true,"AuthenticationEnabled":false,"DicomServerEnabled":false,"DicomWeb":{"Enable":true,"Root":"/dicom-web/","StudiesMetadata":"Full","SeriesMetadata":"Full"}}
