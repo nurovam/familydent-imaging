@@ -1,24 +1,22 @@
 # FamilyDent Imaging
 
-Phase 0: аудит репозитория и существующего OpenDesign. Функциональность платформы пока не реализована.
+Врачебный v1: безопасная выдача исследований конкретным врачам. Разработка ведётся только на синтетических данных; production-инфраструктура не подключена.
 
-- [Исходные правила](familydent_imaging_codex/AGENTS.md)
-- [Техническое задание](familydent_imaging_codex/docs/TECH_SPEC.md)
-- [План реализации](familydent_imaging_codex/docs/IMPLEMENTATION_PLAN.md)
-- [Архитектура](familydent_imaging_codex/docs/ARCHITECTURE.md)
-- [Сопоставление дизайна](familydent_imaging_codex/docs/DESIGN_MAPPING.md)
-- [Открытые решения](familydent_imaging_codex/docs/DECISIONS_NEEDED.md)
-- [Аудит Phase 0](familydent_imaging_codex/docs/PHASE_0_AUDIT.md)
-- [Handoff OpenDesign](Медицинский-портал-FamilyDent/DESIGN-HANDOFF.md)
+Сейчас работают локальные PostgreSQL-аккаунты, пароль+TOTP, server-side сессии, регистрация метаданных и назначения/отзыв, scoped список врача и управление аккаунтами. Просмотр Orthanc→gateway→OHIF проверен отдельным синтетическим экспериментом; в основной auth-портал он ещё не интегрирован. Импорт и скачивание реальных исследований не реализованы.
 
-Экспорт содержит синтетический UI-прототип, не безопасную медицинскую систему. В нём нет backend/MFA/серверных прав/DICOM-декодера. Не вводить реальные данные и не публиковать его как работающий портал. styles.css обращается к Google Fonts; перед визуальной проверкой и переносом нужны согласованные локальные шрифты.
+## Запуск и проверка
 
-Нет установленного приложения/команд сборки: package/lockfiles и сервисы появятся только по отдельному заданию следующей фазы. Production-инфраструктура не подключалась. Не хранить DICOM, персональные данные или секреты в Git.
+- [Backend, локальная БД, создание аккаунтов и тесты](services/api/README.md).
+- [Frontend](apps/web/README.md): из apps/web выполнить npm ci и npm run dev, открыть http://127.0.0.1:5173. Backend нужен для входа; static UI-demo отдельно на /demo.
+- [Изолированный imaging spike](experiments/imaging/README.md): только синтетические геометрические CT, loopback8090.
 
-Правила текущего врачебного v1 и процесса разработки: [DEVELOPMENT.md](familydent_imaging_codex/docs/DEVELOPMENT.md).
+## Правила и документы
 
-Frontend foundation: [запуск и проверки](apps/web/README.md). Из `apps/web`: `npm ci`, затем `npm run dev` (http://127.0.0.1:5173). Пока реализован только демонстрационный список врача.
+- [Правила разработки врачебного v1](familydent_imaging_codex/docs/DEVELOPMENT.md).
+- [Backend этап и критерии](familydent_imaging_codex/docs/BACKEND_AUTH_PLAN.md).
+- [Исходное ТЗ полного MVP](familydent_imaging_codex/docs/TECH_SPEC.md).
+- [Историческая архитектура и полный roadmap Phase0](familydent_imaging_codex/docs/ARCHITECTURE.md), [план](familydent_imaging_codex/docs/IMPLEMENTATION_PLAN.md).
+- [Сопоставление дизайна](familydent_imaging_codex/docs/DESIGN_MAPPING.md), [открытые решения](familydent_imaging_codex/docs/DECISIONS_NEEDED.md), [Phase0 аудит](familydent_imaging_codex/docs/PHASE_0_AUDIT.md).
+- [Неизменяемый handoff OpenDesign](Медицинский-портал-FamilyDent/DESIGN-HANDOFF.md).
 
-Изолированный DICOM/OHIF spike: [запуск и ограничения](experiments/imaging/README.md).
-
-Врачебный backend: [аккаунты, пароль/TOTP, PostgreSQL и назначения](services/api/README.md). Главный маршрут frontend теперь требует вход; старый UI-demo перенесён на `/demo`. Backend запускается явно, production не подключён.
+Все исходные дизайн-файлы сохранены. Безопасность локального backend не является подтверждением юридической, диагностической или эксплуатационной готовности. Не хранить DICOM, данные пациентов, .env и credentials в Git/CI. Merge и рабочий deployment требуют отдельных явных команд владельца.
