@@ -1,0 +1,36 @@
+name: familydent-imaging-spike
+services:
+  orthanc:
+    image: orthancteam/orthanc:25.11.0@sha256:f6a9b77d0d7d743d56abdedf2ab3d08ba343c153ee0b2034c70754ee6ee06bed
+    environment:
+      DICOM_WEB_PLUGIN_ENABLED: 'true'
+    volumes:
+      - ./orthanc.json:/etc/orthanc/orthanc.json:ro
+    tmpfs:
+      - /var/lib/orthanc/db
+    networks: [spike]
+  gateway:
+    build: .
+    networks: [spike]
+    depends_on: [orthanc]
+  seed:
+    build: .
+    command: [python, synthetic.py]
+    profiles: [tools]
+    networks: [spike]
+  ohif:
+    image: ohif/app:v3.11.0@sha256:dee5c696c712082fdd4321b6f5ad94846dc97df5d970548ca0e1d5289667b047
+    volumes:
+      - ./app-config.js:/usr/share/nginx/html/app-config.js:ro
+    networks: [spike]
+  web:
+    image: nginx:1.28-alpine@sha256:a8b39bd9cf0f83869a2162827a0caf6137ddf759d50a171451b335cecc87d236
+    ports: ['127.0.0.1:8090:80']
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    networks: [spike, frontend]
+    depends_on: [gateway, ohif]
+networks:
+  frontend:
+  spike:
+    internal: true

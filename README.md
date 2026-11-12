@@ -18,3 +18,5 @@ Phase 0: аудит репозитория и существующего OpenDes
 Правила текущего врачебного v1 и процесса разработки: [DEVELOPMENT.md](familydent_imaging_codex/docs/DEVELOPMENT.md).
 
 Frontend foundation: [запуск и проверки](apps/web/README.md). Из `apps/web`: `npm ci`, затем `npm run dev` (http://127.0.0.1:5173). Пока реализован только демонстрационный список врача.
+
+Изолированный DICOM/OHIF spike: [запуск и ограничения](experiments/imaging/README.md).
