@@ -1,0 +1,61 @@
+{
+  "status": "partial",
+  "htmlFiles": 7,
+  "staticChecks": {
+    "htmlNesting": "pass",
+    "internalLinks": "pass",
+    "staticUniqueInspectableIds": "pass",
+    "locale": "ru",
+    "javascriptSyntax": "pass",
+    "antiSlop": "pass"
+  },
+  "interactionChecks": {
+    "fixtures": 9,
+    "status": "pass",
+    "coverage": [
+      "Поиск и пустой результат",
+      "Фильтр новых исследований",
+      "История пациента",
+      "Ошибка кода подтверждения",
+      "Выбор серии и среза",
+      "Масштаб",
+      "Создание ссылки",
+      "Отзыв ссылки",
+      "Три шага загрузки и локальное сохранение",
+      "Изменение роли",
+      "Приглашение и аудит"
+    ]
+  },
+  "visualCheck": {
+    "status": "unavailable",
+    "reason": "Недоступен сервис рендеринга"
+  },
+  "responsiveCheck": {
+    "status": "static-only",
+    "thresholds": [
+      600,
+      900,
+      1200,
+      1600
+    ],
+    "targets": [
+      360,
+      390,
+      430,
+      600,
+      768,
+      820,
+      1024,
+      1366,
+      1440,
+      1920
+    ]
+  },
+  "integrationLimits": [
+    "Нет DICOM-декодера",
+    "Нет отправки email",
+    "Нет серверной авторизации",
+    "Нет настоящих файлов DICOM/Romexis",
+    "Временные ссылки и роли моделируются в текущем браузере"
+  ]
+}

@@ -1,0 +1,33 @@
+# Credentials / local environment
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+# Medical data and exports (synthetic fixtures require explicit review)
+*.dcm
+*.dicom
+*.DCM
+*.DICOM
+DICOMDIR
+*.zip
+*.ZIP
+*.7z
+*.tar
+*.gz
+*.bak
+*.dump
+*.sql
+# Runtime and dependency artifacts
+node_modules/
+.next/
+dist/
+.venv/
+__pycache__/
+.pytest_cache/
+.coverage
+coverage/
+playwright-report/
+test-results/
+*.log
+.DS_Store
