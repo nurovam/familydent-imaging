@@ -203,6 +203,15 @@ try:
         staff.get_by_role("button", name="Открыть SYN-BROWSER-001", exact=True).click()
         staff.get_by_role("button", name="Импорт DICOM", exact=True).click()
         print("Browser checkpoint: upload dialog", flush=True)
+        for width in (320, 375, 414, 768, 1440):
+            staff.set_viewport_size({"width": width, "height": 900})
+            dropzone = staff.locator(".dicom-dropzone")
+            expect(dropzone).to_be_visible()
+            staff.get_by_label("DICOM или ZIP", exact=True).focus()
+            assert dropzone.evaluate("el => getComputedStyle(el).outlineStyle") != "none"
+            assert staff.get_by_role("dialog").evaluate("el => el.scrollWidth <= el.clientWidth")
+            staff.screenshot(path=f"test-results/upload-picker-{width}.png")
+        staff.set_viewport_size({"width": 1440, "height": 900})
         payload = BytesIO()
         from uuid import uuid4
 
@@ -213,6 +222,7 @@ try:
         staff.get_by_label("DICOM или ZIP", exact=True).set_input_files(
             {"name": "synthetic.zip", "mimeType": "application/zip", "buffer": payload.getvalue()}
         )
+        expect(staff.locator(".dicom-dropzone").get_by_text("synthetic.zip", exact=True)).to_be_visible()
         # The response event fires on headers; only requestfinished guarantees its body is available.
         with staff.expect_event(
             "requestfinished",
@@ -341,7 +351,7 @@ try:
         admin.set_viewport_size({"width": 390, "height": 844})
         admin.screenshot(path="test-results/mobile.png", full_page=True)
         for role, page in (("staff", staff), ("doctor", doctor), ("admin", admin)):
-            for width in (320, 375, 414, 768, 1024, 1440, 1920):
+            for width in (320, 360, 375, 390, 414, 430, 600, 768, 820, 1024, 1366, 1440, 1920):
                 page.set_viewport_size({"width": width, "height": 900})
                 page.evaluate("window.scrollTo(0, 0)")
                 button = page.get_by_role("button", name="Выйти", exact=True)

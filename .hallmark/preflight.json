@@ -1,13 +1,13 @@
 {
   "date": "2026-11-13",
-  "scope": "Workspace.tsx register-first composition",
+  "scope": "OpenDesign component fidelity in existing cabinets and import dialog",
   "source": "Медицинский-портал-FamilyDent/DESIGN.md",
   "fonts": [
     "Roboto Serif",
     "Golos Text"
   ],
   "palette": "existing apps/web/src/design.css :root",
-  "spacing": "existing 8px rhythm, compact 12/16/24px steps",
+  "spacing": "existing compact1360px workbench; source8px rhythm",
   "framework": "React + TypeScript + Vite",
   "motion": "existing restrained transitions, reduced-motion",
   "preserve": [
@@ -17,9 +17,9 @@
     "source export"
   ],
   "fix": [
-    "permanently visible creation forms",
-    "repeated equal-weight rounded cards",
-    "duplicated headings and technical notice",
-    "lack of list-first workflow"
+    "flattened borderless registers",
+    "square buttons and form surfaces drifting from source",
+    "missing gold navigation, outline icons and patient avatars",
+    "unstyled native file-picker surface"
   ]
 }

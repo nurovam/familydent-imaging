@@ -22,3 +22,9 @@ Subjective Hallmark self-review1–5: philosophy4, hierarchy5, execution4, speci
 ## Limits
 
 No new clinical functionality, production deployment or auth reset. First pages of staff/team registers remain bounded as before. Closing an unfinished dialog discards its local unsaved form fields; already saved patient selection persists between registration steps. Native dialog supplies keyboard containment. Full v1 accessibility review is still ahead.
+
+## OpenDesign component fidelity — 2026-11-13
+
+Latest owner instruction asks to match the source elements more closely. [Component alignment](OPENDESIGN_COMPONENT_ALIGNMENT.md) supersedes the rectangular-control and borderless-panel choices above. Compact register-first workflow stays; source white bordered18px panels, pill actions,12px fields, gold navigation, serif form headings, outline icons and initial avatars are restored. Native dialogs remain, with a44px close icon. File picker now shows chosen filename with native keyboard/file-selection behavior; actual import bounds and security endpoints are unchanged.
+
+Real browser flow passed MFA/upload/worker/review/OHIF/ZIP/revoke, external requests0.13-width role/dialog matrix and5-width file-picker focus/selection checks passed; screenshots visually compared with doctor/upload/admin source renderings using bundled local fonts. Original19 source files remain unchanged. No69-gate automatic claim; applicable contrast/keyboard/token/responsive/no-fake-content checks reviewed, shared-brand diversification intentionally disabled.

@@ -1,3 +1,4 @@
+import { UiIcon } from './UiIcon';
 import { useEffect, useRef, type ReactNode } from 'react';
 
 /** Native modal supplies focus containment, Escape and return-to-trigger semantics. */
@@ -11,7 +12,7 @@ export function TaskDialog({ title, onClose, children }: { title: string; onClos
     return () => { dialog.close(); trigger?.focus({ preventScroll: true }); };
   }, []);
   return <dialog ref={ref} className="task-dialog clinical-workspace" aria-label={title} onCancel={event => { event.preventDefault(); onClose(); }}>
-    <div className="dialog-actions"><button className="btn" type="button" onClick={onClose} aria-label="Закрыть форму">Закрыть</button></div>
+    <div className="dialog-actions"><button className="icon-btn" type="button" onClick={onClose} aria-label="Закрыть форму"><UiIcon name="close" /></button></div>
     {children}
   </dialog>;
 }

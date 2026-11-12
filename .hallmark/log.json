@@ -1,6 +1,14 @@
 [
   {
     "date": "2026-11-13",
+    "scope": "existing authenticated cabinets and import components",
+    "macrostructure": "compact register-first workbench with on-demand task dialogs",
+    "theme": "existing FamilyDent OpenDesign handoff",
+    "enrichment": "none",
+    "brief": "Restore source panel/pill/field geometry, gold navigation, avatars, icons and file-picker treatment; preserve authorization and compact layout."
+  },
+  {
+    "date": "2026-11-13",
     "scope": "shared cabinet view",
     "macrostructure": "register-first workbench with on-demand task dialogs",
     "theme": "existing FamilyDent handoff",
