@@ -70,3 +70,17 @@ Dependencies pinned в uv.lock и requirements*.txt с hashes. Regenerate: `uv e
 ## Открытые ограничения
 
 Нет recovery/password change/MFA reset/rotation/операционного cleanup auth tables; до пилота нужен проверенный регламент. Аккаунт создаётся уполномоченным сотрудником после проверки врача; процедура пока организационная. Клиники — справочник одного оператора FamilyDent, не независимые tenants. UI staff/admin показывает первые страницы справочников; полноценная навигация больших staff списков и визуальная приёмка новых security forms ещё впереди. Ключ настройки пока вводится вручную, QR не реализован. Нет DICOM import/ZIP/production streaming, READY transition или policy actions для выдачи изображений. При переносе imaging использовать отдельную action-aware READY policy, а не только текущую metadata policy. Этот этап не делает портал production-ready.
+
+## Данные для ручной проверки
+
+После `seed-demo` выполнить из services/api:
+
+```sh
+uv run python -m app.manage seed-studies
+```
+
+Команда разрешена только для loopback familydent_dev и существующих активных SYNTHETIC аккаунтов. Добавляет 8 пациентов SYN-DEMO-001…008 и 12 исследований с явными тестовыми подписями. Набор: doctor@example.test видит5 исследований; other@example.test —3; staff видит все12, в том числе2 неназначенных,1 заблокированное и1 с отозванным назначением. У одного пациента есть исследования разных врачей — история по пациенту не расширяет права.
+
+Повторный запуск не создаёт дубли и не восстанавливает отозванные доступы, не меняет existing patients, статусы studies, пароли, TOTP или сессии. Коллизия внутреннего ID прекращает транзакцию без перезаписи. Это metadata REGISTERED/BLOCKED, **не DICOM-файлы**: реальный просмотр по-прежнему в отдельном synthetic imaging spike. Никаких migrations/удалений/сбросов для заполнения не требуется.
+
+Актуально18 PostgreSQL tests, включая idempotent seed, разные doctor scopes и сохранность MFA/session/revocations.

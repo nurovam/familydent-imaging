@@ -10,10 +10,12 @@ from uuid import uuid4
 
 from alembic.config import Config
 from sqlalchemy import create_engine, func, select
+from sqlalchemy.engine import make_url
 from sqlalchemy.orm import Session
 
 from alembic import command
 
+from .demo_data import seed_demo_studies
 from .models import AuditEvent, Clinic, Membership, User
 from .runtime import load_local_env
 from .security import hash_password
@@ -21,7 +23,7 @@ from .security import hash_password
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("command", choices=["migrate", "bootstrap-admin", "seed-demo"])
+    parser.add_argument("command", choices=["migrate", "bootstrap-admin", "seed-demo", "seed-studies"])
     args = parser.parse_args()
     env_path = load_local_env()
     if args.command == "migrate":
@@ -29,6 +31,18 @@ def main():
         cfg.attributes["database_url"] = os.environ["DEV_ADMIN_DATABASE_URL"]
         command.upgrade(cfg, "head")
         print("Migrated local development database.")
+        return
+    if args.command == "seed-studies":
+        url = make_url(os.environ["DEV_DATABASE_URL"])
+        if url.host not in {"127.0.0.1", "localhost"} or url.database != "familydent_dev":
+            raise SystemExit("Synthetic seeding is restricted to the local familydent_dev database")
+        engine = create_engine(url, hide_parameters=True)
+        try:
+            with Session(engine) as db, db.begin():
+                counts = seed_demo_studies(db, datetime.now(UTC))
+            print("Synthetic metadata added: " + ", ".join(f"{key}={value}" for key, value in counts.items()))
+        finally:
+            engine.dispose()
         return
     engine = create_engine(os.environ["DEV_DATABASE_URL"], hide_parameters=True)
     with Session(engine) as db, db.begin():
