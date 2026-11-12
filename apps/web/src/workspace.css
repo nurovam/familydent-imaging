@@ -176,3 +176,5 @@ html, body { overflow-x: clip; }
 @media (hover: hover) { .clinical-workspace .recent-study .btn:hover { background: var(--dark-line); color: var(--surface); } }
 @media (max-width: 1279px) { .cabinet-grid { grid-template-columns: minmax(0, 1fr); } .study-context { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; } }
 @media (max-width: 640px) { .study-context { grid-template-columns: minmax(0, 1fr); } }
+
+.clinical-workspace tr[aria-current="true"] { background: var(--bg); color: var(--fg); }

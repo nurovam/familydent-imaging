@@ -9,7 +9,7 @@ const eventNames: Record<string, string> = { registered: 'Новое иссле�
 function dateTime(value: string) {
   return new Date(value).toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
-export function StudyContext({ version, onOpen, report }: { version: number; onOpen: (study: ServerStudy) => void; report: (error: unknown) => void }) {
+export function StudyContext({ version, selection, onOpen, report }: { version: number; selection: ServerStudy | null; onOpen: (study: ServerStudy) => void; report: (error: unknown) => void }) {
   const [overview, setOverview] = useState<Overview | null>(null);
   const [error, setError] = useState('');
   useEffect(() => {
@@ -20,10 +20,10 @@ export function StudyContext({ version, onOpen, report }: { version: number; onO
     });
     return () => controller.abort();
   }, [version, report]);
-  const study = overview?.latest;
+  const study = selection ?? overview?.latest;
   return <aside className="study-context" aria-label="Последнее исследование и события">
-    <article className="panel recent-study" aria-label="Последнее поступление">
-      <div className="panel-head"><div><div className="eyebrow">Последнее поступление</div><h3>{study?.title ?? (overview ? 'Исследований пока нет' : error ? 'Данные недоступны' : 'Загрузка…')}</h3></div><UiIcon name="studies" /></div>
+    <article className="panel recent-study" aria-label="Карточка исследования">
+      <div className="panel-head"><div><div className="eyebrow">{selection ? 'Выбранное исследование' : 'Последнее поступление'}</div><h3>{study?.title ?? (overview ? 'Исследований пока нет' : error ? 'Данные недоступны' : 'Загрузка…')}</h3></div><UiIcon name="studies" /></div>
       <DentalSketch />
       <div className="details">{study ? <><div className="recent-patient">{study.display_name}</div><p><time dateTime={study.created_at}>{dateTime(study.created_at)}</time> · {study.modality}</p><button className="btn" onClick={() => onOpen(study)}>Открыть исследование<svg className="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5" /></svg></button></> : <p>{error || (overview ? 'Здесь появится последнее доступное вам исследование.' : 'Проверяем доступные исследования.')}</p>}</div>
     </article>

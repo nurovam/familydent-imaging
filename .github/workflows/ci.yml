@@ -101,15 +101,17 @@ jobs:
           IMAGING_API_PORT=8101 docker compose -f ../../infra/local/compose.yaml --profile test --profile imaging up -d --wait testdb orthanc ohif viewer
       - name: Backend static and contract checks
         run: |
-          .venv/bin/ruff check app tests browser_check.py export_openapi.py
-          .venv/bin/ruff format --check app tests alembic browser_check.py export_openapi.py
+          .venv/bin/ruff check app tests browser_check.py context_selection_check.py export_openapi.py
+          .venv/bin/ruff format --check app tests alembic browser_check.py context_selection_check.py export_openapi.py
           .venv/bin/mypy app
           .venv/bin/python export_openapi.py --check
           .venv/bin/pip-audit --disable-pip --require-hashes -r requirements.txt
       - name: PostgreSQL security and migration tests
         run: .venv/bin/pytest -q
       - name: Real browser MFA import review OHIF download and revocation
-        run: .venv/bin/python browser_check.py
+        run: |
+          .venv/bin/python browser_check.py
+          .venv/bin/python context_selection_check.py
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: always()
         with:

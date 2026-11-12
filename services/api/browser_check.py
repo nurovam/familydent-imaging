@@ -250,9 +250,9 @@ try:
         print("Browser checkpoint: worker reviewed", flush=True)
         doctor = login("doctor")
         expect(doctor.get_by_role("button", name="Открыть SYN-BROWSER-001", exact=True)).to_be_visible()
-        expect(doctor.get_by_role("article", name="Последнее поступление", exact=True)).to_be_visible()
+        expect(doctor.get_by_role("article", name="Карточка исследования", exact=True)).to_be_visible()
         expect(doctor.get_by_role("region", name="Последние события", exact=True)).to_be_visible()
-        doctor.get_by_role("article", name="Последнее поступление", exact=True).get_by_role(
+        doctor.get_by_role("article", name="Карточка исследования", exact=True).get_by_role(
             "button", name="Открыть исследование", exact=True
         ).click()
         expect(doctor.locator("#study-details")).to_be_visible()
@@ -347,7 +347,7 @@ try:
         doctor.get_by_role("button", name="Обновить", exact=True).click()
         expect(doctor.get_by_text("Назначенные исследования не найдены", exact=True)).to_be_visible()
         expect(
-            doctor.get_by_role("article", name="Последнее поступление", exact=True).get_by_role("button")
+            doctor.get_by_role("article", name="Карточка исследования", exact=True).get_by_role("button")
         ).to_have_count(0)
         print("Browser checkpoint: revoke verified", flush=True)
         # Regression: latest eligible study may sit beyond25 blocked rows in the staff register.
@@ -375,7 +375,7 @@ try:
             blocked_ids = [row.id for row in blocked]
         staff.get_by_role("button", name="Обновить", exact=True).click()
         expect(staff.get_by_role("button", name="Открыть SYN-BROWSER-001", exact=True)).to_have_count(25)
-        recent = staff.get_by_role("article", name="Последнее поступление", exact=True)
+        recent = staff.get_by_role("article", name="Карточка исследования", exact=True)
         expect(recent.get_by_role("heading", name="SYNTHETIC BROWSER STUDY", exact=True)).to_be_visible()
         recent.get_by_role("button", name="Открыть исследование", exact=True).click()
         expect(
