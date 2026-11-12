@@ -74,3 +74,9 @@ html, body { overflow-x: clip; }
 @media (prefers-reduced-motion: reduce) { .clinical-workspace .btn { transition: none; } }
 .task-dialog { box-shadow: none; }
 .task-dialog::backdrop { background: color-mix(in oklch, var(--dark) 50%, transparent); backdrop-filter: none; }
+
+.import-status { border-top: 1px solid var(--border); padding-block: 14px; }
+.dicom-uid { overflow-wrap: anywhere; font-size: 13px; }
+.review-confirm { display: flex; align-items: flex-start; gap: 10px; font-size: 14px; }
+.review-confirm input { flex: 0 0 auto; width: 18px; height: 18px; margin-top: 3px; }
+.task-form input[type=file] { max-width: 100%; font-size: 13px; padding: 10px; }

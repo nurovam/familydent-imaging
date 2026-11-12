@@ -95,10 +95,10 @@ jobs:
           .venv/bin/pip install --require-hashes -r requirements-test.txt
           .venv/bin/playwright install --with-deps chromium
           npm --prefix ../../apps/web ci
-      - name: Start disposable PostgreSQL
+      - name: Start disposable PostgreSQL and synthetic imaging
         run: |
           python3 ../../infra/local/init_env.py
-          docker compose -f ../../infra/local/compose.yaml --profile test up -d --wait testdb
+          IMAGING_API_PORT=8101 docker compose -f ../../infra/local/compose.yaml --profile test --profile imaging up -d --wait testdb orthanc ohif viewer
       - name: Backend static and contract checks
         run: |
           .venv/bin/ruff check app tests browser_check.py export_openapi.py
@@ -108,7 +108,7 @@ jobs:
           .venv/bin/pip-audit --disable-pip --require-hashes -r requirements.txt
       - name: PostgreSQL security and migration tests
         run: .venv/bin/pytest -q
-      - name: Real browser password TOTP and assignment workflow
+      - name: Real browser MFA import review OHIF download and revocation
         run: .venv/bin/python browser_check.py
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: always()
@@ -118,7 +118,7 @@ jobs:
           retention-days: 7
       - name: Stop disposable database
         if: always()
-        run: docker compose -f ../../infra/local/compose.yaml --profile test down
+        run: docker compose -f ../../infra/local/compose.yaml --profile test --profile imaging down
   secrets:
     runs-on: ubuntu-24.04
     timeout-minutes: 5

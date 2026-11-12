@@ -68,6 +68,35 @@ class Assignment(Entity, Base):
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
+class DicomImportJob(Entity, Base):
+    __tablename__ = "dicom_import_jobs"
+    __table_args__ = (
+        CheckConstraint("state IN ('QUEUED','REVIEW','FAILED','PUBLISHED')", name="import_state"),
+        CheckConstraint("kind IN ('dicom','zip')", name="import_kind"),
+    )
+    study_id: Mapped[UUID] = mapped_column(ForeignKey("studies.id"), index=True)
+    created_by: Mapped[UUID] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    state: Mapped[str] = mapped_column(String(16), default="QUEUED")
+    kind: Mapped[str] = mapped_column(String(8))
+    error_code: Mapped[str | None] = mapped_column(String(40))
+    study_uid: Mapped[str | None] = mapped_column(String(64))
+    zip_sha256: Mapped[str | None] = mapped_column(String(64))
+    zip_size: Mapped[int | None] = mapped_column(Integer)
+
+
+class DicomInstance(Entity, Base):
+    __tablename__ = "dicom_instances"
+    __table_args__ = (CheckConstraint("size > 0", name="instance_size"),)
+    job_id: Mapped[UUID] = mapped_column(ForeignKey("dicom_import_jobs.id"), index=True)
+    study_id: Mapped[UUID] = mapped_column(ForeignKey("studies.id"), index=True)
+    series_uid: Mapped[str] = mapped_column(String(64), index=True)
+    sop_uid: Mapped[str] = mapped_column(String(64), unique=True)
+    orthanc_id: Mapped[str] = mapped_column(String(64))
+    sha256: Mapped[str] = mapped_column(String(64))
+    size: Mapped[int] = mapped_column(Integer)
+
+
 class AuthChallenge(Base):
     __tablename__ = "auth_challenges"
     token_hash: Mapped[str] = mapped_column(String(64), primary_key=True)

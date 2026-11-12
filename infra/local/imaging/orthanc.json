@@ -1,0 +1,9 @@
+{
+  "Name": "FamilyDent synthetic imports only",
+  "RemoteAccessAllowed": true,
+  "AuthenticationEnabled": false,
+  "DicomServerEnabled": false,
+  "OverwriteInstances": false,
+  "HttpDescribeErrors": false,
+  "DicomWeb": {"Enable": true, "Root": "/dicom-web/", "EnableWado": false, "Host": "localhost:8042"}
+}
