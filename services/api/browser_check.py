@@ -350,6 +350,45 @@ try:
             doctor.get_by_role("article", name="Последнее поступление", exact=True).get_by_role("button")
         ).to_have_count(0)
         print("Browser checkpoint: revoke verified", flush=True)
+        # Regression: latest eligible study may sit beyond25 blocked rows in the staff register.
+        from datetime import timedelta
+        from uuid import UUID
+
+        from sqlalchemy import delete
+
+        from app.models import Study
+
+        with Session(app.state.engine) as db, db.begin():
+            original = db.get(Study, UUID(study_id))
+            blocked = [
+                Study(
+                    patient_id=original.patient_id,
+                    title=f"SYNTHETIC BLOCKED {n}",
+                    modality="CBCT",
+                    state="BLOCKED",
+                    created_at=datetime.now(UTC) + timedelta(days=1),
+                )
+                for n in range(25)
+            ]
+            db.add_all(blocked)
+            db.flush()
+            blocked_ids = [row.id for row in blocked]
+        staff.get_by_role("button", name="Обновить", exact=True).click()
+        expect(staff.get_by_role("button", name="Открыть SYN-BROWSER-001", exact=True)).to_have_count(25)
+        recent = staff.get_by_role("article", name="Последнее поступление", exact=True)
+        expect(recent.get_by_role("heading", name="SYNTHETIC BROWSER STUDY", exact=True)).to_be_visible()
+        recent.get_by_role("button", name="Открыть исследование", exact=True).click()
+        expect(
+            staff.get_by_role("dialog").get_by_text("SYNTHETIC BROWSER STUDY · SYN-BROWSER-001", exact=True)
+        ).to_be_visible()
+        staff.get_by_role("button", name="Импорт DICOM", exact=True).click()
+        expect(staff.get_by_role("dialog", name="Импорт DICOM", exact=True)).to_be_visible()
+        expect(staff.get_by_text("Доступно врачу", exact=True)).to_be_visible()
+        staff.get_by_role("button", name="Закрыть форму", exact=True).click()
+        with Session(app.state.engine) as db, db.begin():
+            db.execute(delete(Study).where(Study.id.in_(blocked_ids)))
+        staff.get_by_role("button", name="Обновить", exact=True).click()
+        expect(staff.get_by_role("button", name="Открыть SYN-BROWSER-001", exact=True)).to_have_count(1)
         admin = login("admin")
         expect(admin.get_by_role("heading", name="Команда и доступы", exact=True)).to_be_visible()
         assert admin.context.request.get("http://127.0.0.1:5174/api/doctor/studies").status == 403
