@@ -20,3 +20,5 @@ GitHub-hosted runners — только synthetic fixtures. Нет production sec
 
 ## Готовность и границы
 Этап завершён после демонстрации согласованного сценария, успешных обязательных тестов и приёмки без блокирующих дефектов. Новые функции идут в backlog, несвязанный рефакторинг — отдельным PR. Готовый дизайн сохраняется; security UX дополняется с согласованием. Реальные DICOM/PII/secrets не попадают в Git/CI. Старые документы Phase 0 — исторический полный roadmap; при расхождении по стеку/объёму v1 приоритет у этого документа и явных решений владельца.
+
+Актуальное состояние: обязательные quality/frontend/imaging-spike/backend/secrets и ci-required. Backend использует PostgreSQL integration + browser TOTP/assignment tests, Gitleaks redacted history scan, pip-audit hashes. Production publishing по-прежнему выключен.

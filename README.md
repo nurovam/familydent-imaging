@@ -20,3 +20,5 @@ Phase 0: аудит репозитория и существующего OpenDes
 Frontend foundation: [запуск и проверки](apps/web/README.md). Из `apps/web`: `npm ci`, затем `npm run dev` (http://127.0.0.1:5173). Пока реализован только демонстрационный список врача.
 
 Изолированный DICOM/OHIF spike: [запуск и ограничения](experiments/imaging/README.md).
+
+Врачебный backend: [аккаунты, пароль/TOTP, PostgreSQL и назначения](services/api/README.md). Главный маршрут frontend теперь требует вход; старый UI-demo перенесён на `/demo`. Backend запускается явно, production не подключён.

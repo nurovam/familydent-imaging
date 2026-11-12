@@ -1,0 +1,24 @@
+[project]
+name = "familydent-api"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = ["fastapi", "uvicorn", "sqlalchemy>=2,<3", "alembic", "psycopg[binary]", "pwdlib[argon2]", "pyotp", "cryptography"]
+[dependency-groups]
+dev = [
+    "pytest",
+    "httpx",
+    "ruff",
+    "mypy",
+    "playwright",
+    "pip-audit>=2.10.1",
+]
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+[tool.ruff]
+line-length = 110
+[tool.mypy]
+ignore_missing_imports = true
+check_untyped_defs = true
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I"]

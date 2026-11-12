@@ -1,0 +1,37 @@
+name: familydent-backend-local
+services:
+  db:
+    image: postgres:16@sha256:d4c3314b2dd74ff23cd6cd07e4d7e737cb6ef791c22a7cbd744cfbfb4815df72
+    environment:
+      POSTGRES_USER: familydent
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?run init_env.py}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?run init_env.py}
+      POSTGRES_DB: familydent_dev
+    ports: ['127.0.0.1:55432:5432']
+    volumes:
+      - dev-db:/var/lib/postgresql/data
+      - ./init-db.sh:/docker-entrypoint-initdb.d/10-role.sh:ro
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U familydent -d familydent_dev']
+      interval: 2s
+      timeout: 2s
+      retries: 30
+  testdb:
+    image: postgres:16@sha256:d4c3314b2dd74ff23cd6cd07e4d7e737cb6ef791c22a7cbd744cfbfb4815df72
+    profiles: [test]
+    environment:
+      POSTGRES_USER: familydent
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?run init_env.py}
+      APP_DB_PASSWORD: ${APP_DB_PASSWORD:?run init_env.py}
+      POSTGRES_DB: familydent_test
+    ports: ['127.0.0.1:55433:5432']
+    volumes:
+      - ./init-db.sh:/docker-entrypoint-initdb.d/10-role.sh:ro
+    tmpfs: [/var/lib/postgresql/data]
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U familydent -d familydent_test']
+      interval: 2s
+      timeout: 2s
+      retries: 30
+volumes:
+  dev-db:
